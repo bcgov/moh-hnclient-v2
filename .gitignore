@@ -1,0 +1,7 @@
+.idea/*
+*.iml
+*.class
+hnclient-v2/target/
+hnclient-v2/.idea/*
+mock-point-of-service/target/
+mock-point-of-service/.idea/*
