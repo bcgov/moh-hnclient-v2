@@ -49,6 +49,7 @@ public class RenewKeys {
         certFos.write(sw.toString().getBytes(StandardCharsets.UTF_8));
         certFos.close();
 
+        // TODO the Java 11 HttpClient doesn't support MultiPartBody so we needed a custom class could explore OkHTTP
         // use the access token upload the public key to Keycloak
         MultiPartBodyPublisher publisher = new MultiPartBodyPublisher()
                 .addPart("keystoreFormat", "Certificate PEM")
