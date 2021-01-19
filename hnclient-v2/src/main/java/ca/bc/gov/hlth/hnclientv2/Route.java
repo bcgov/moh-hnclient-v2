@@ -3,6 +3,7 @@ package ca.bc.gov.hlth.hnclientv2;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
+import ca.bc.gov.hlth.hnclientv2.json.ProcessV2ToJson;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
 import io.netty.buffer.ByteBuf;
@@ -61,10 +62,16 @@ public class Route extends RouteBuilder {
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
         // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
         renewKeys();
+        
+        //adding for generating a JSON message based on a V2 message
+        ProcessV2ToJson procV2Json = new ProcessV2ToJson();
 
-        from("netty:tcp://{{hostname}}:{{port}}")
+        from("netty:tcp://{{hostname}}:{{port}}")        		
                 .log("Retrieving access token")
                 .setHeader("Authorization").method(retrieveAccessToken)
+                .log("Receiving message and try to create a JSON message")
+                //process a HLV2 message to a FHIR JSON message
+        		.process(procV2Json).id("ProcessV2ToJson")
                 .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
                 .log("Sending to HNSecure")
                 .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")

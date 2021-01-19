@@ -67,9 +67,9 @@ public class HL7v2SendMessage {
              */
             //baos.write(0x0b); //header byte
             //baos.write(msg.length()); //length... does this need to be padded?
-            baos.write(msg.getBytes());
-            baos.write(0x1c); //trailing bytes
-            baos.write(0x0d);
+            baos.write(v2Msg.getBytes());
+//            baos.write(0x1c); //trailing bytes
+//            baos.write(0x0d);
             byte[] message = baos.toByteArray();
 
             sock.getOutputStream().write(message);
