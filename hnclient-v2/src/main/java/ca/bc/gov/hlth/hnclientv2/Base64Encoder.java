@@ -22,17 +22,23 @@ public class Base64Encoder {
 	private static Logger logger = LoggerFactory.getLogger(Base64Encoder.class);
 		
 	@Handler
-	public static String convertToBase64String(String vMessage) {
+	public  String convertToBase64String(String vMessage) {
 		
+		logger.info("vMessage----"+vMessage);		
 		String encodedString = encodeString(vMessage);
 		logger.info("Message encoded successfully");
+		
 		return encodedString;
 		
 	}
 	
 	
 
-	public static String encodeString(String v2Message) {
+	/**
+	 * @param v2Message
+	 * @return message in base64 format
+	 */
+	public  String encodeString(String v2Message) {
 	if(StringUtil.isNullOrEmpty(v2Message)){
 		throw new IllegalArgumentException("v2Message can't be null or empty");
 	} else

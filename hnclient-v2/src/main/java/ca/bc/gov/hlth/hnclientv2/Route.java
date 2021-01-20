@@ -51,8 +51,9 @@ public class Route extends RouteBuilder {
      * Camel route that:
      *   1. Receives a message over tcp
      *   2. Retrieves a access token using Client Credential Grant
-     *   3. Passes the message to an http endpoint with the JWT attached
-     *   4. Returns the response
+     *   3. Converts the message to base64 format
+     *   4. Passes the message to an http endpoint with the JWT attached
+     *   5. Returns the response
      */
     @Override
     public void configure() throws Exception {
@@ -61,17 +62,19 @@ public class Route extends RouteBuilder {
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
         // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
         renewKeys();
-
+     
         from("netty:tcp://{{hostname}}:{{port}}")
-                .log("Retrieving access token")
-                .setHeader("Authorization").method(retrieveAccessToken)
-                .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-                .log("Sending to HNSecure")
-                .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
-                .log("Received response from HNSecure")
-                .convertBodyTo(String.class)
-                .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-                .convertBodyTo(ByteBuf.class);
+        .log("Retrieving access token")
+        .setHeader("Authorization").method(retrieveAccessToken)
+        .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+        .log("Sending to HNSecure")
+        .setBody().method(new Base64Encoder())
+        .log("v2Message encoded to Base64 format")
+        .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
+        .log("Received response from HNSecure")
+        .convertBodyTo(String.class)
+        .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+        .convertBodyTo(ByteBuf.class);
     }
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {
