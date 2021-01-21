@@ -54,7 +54,7 @@ public class HL7v2SendMessage {
             "}";
 
     public static void main(String[] args) throws Exception {
-        try (Socket sock = new Socket("localhost", 8080)) {
+        try (Socket sock = new Socket("127.0.0.1", 8080)) {
             String output;
             //String msg = readInput(args[0]);
             //String msg = "This is a test message from a mock Point of Service";
