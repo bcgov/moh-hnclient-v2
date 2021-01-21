@@ -16,7 +16,7 @@ public class Base64Test {
 	@Test
 	public void test_encode() throws Exception {
 		
-		String convertToBase64String = Base64Encoder.convertToBase64String(v2Msg);
+		String convertToBase64String = new Base64Encoder().convertToBase64String(v2Msg);
 		String decode = new String(ConvertFromBase64String(convertToBase64String));
 		assertTrue(v2Msg.equals(decode));
 		
