@@ -37,7 +37,8 @@ public final class Util {
 	 * @throws UnsupportedEncodingException
 	 */
 	public static String decodeBase64(String stringToDecode) throws UnsupportedEncodingException {
-        byte[] bytesToDecode = stringToDecode.getBytes(StandardCharsets.UTF_8);
+        if(StringUtil.isNullOrEmpty(stringToDecode)) return null;
+		byte[] bytesToDecode = stringToDecode.getBytes(StandardCharsets.UTF_8);
         byte[] decodedBytes = Base64.getDecoder().decode(bytesToDecode);
         String decodedString = new String(decodedBytes, StandardCharsets.UTF_8);
 

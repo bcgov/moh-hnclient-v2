@@ -16,7 +16,6 @@ import ca.bc.gov.hlth.hnclientv2.json.FHIRJsonMessage;
 import ca.bc.gov.hlth.hnclientv2.json.FHIRJsonUtil;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
-import net.minidev.json.parser.JSONParser;
 
 /**
  * @author Tony.Ma * 
@@ -26,9 +25,6 @@ import net.minidev.json.parser.JSONParser;
 public class FHIRJsonUtilTest {
 	
 	public String hl7NullValue = null;
-	
-	private static final JSONParser jsonParser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
-
 	
 	public String msgE45 = "MSH|^~\\&|HR|BC00000098|RAIGET-DOC-SUM|BC0003000|19991004103039|lharris|E45|19980915000015|D|2.3\r\n" + 
 			"HDR|||TRAININGAdmin\r\n" + 
@@ -74,6 +70,12 @@ public class FHIRJsonUtilTest {
 	public void testDoNotThrowCreateFHIRJsonObj_msgE45()  {	
 		assertDoesNotThrow(() -> FHIRJsonUtil.createFHIRJsonObj(msgE45));		
 	}
+	
+	@Test
+	public void testIsJSONMsgE45()  {	
+		JSONObject fhirObj = FHIRJsonUtil.createFHIRJsonObj(msgE45);
+		assertTrue(JSONValue.isValidJson(fhirObj.toJSONString()));
+	}
 		
 	@Test
 	public void testCreateFHIRJsonObj_msgE45()  {	
@@ -83,4 +85,55 @@ public class FHIRJsonUtilTest {
 		assertEquals(expectedJsonString,actualString);
 	}
 	
+	@Test
+	public void testCreateFHIRJsonObj_msgr30() {
+		JSONObject fhirObj = FHIRJsonUtil.createFHIRJsonObj(msgr30);
+		String expectedJsonString = "{\"content\":[{\"attachment\":{\"data\":\"MSH|^~\\\\&|HR|BC00000098|RAIEST-PYR-RL|BC0003000|19990719125635|PM33283|R30|19980915000017|D|2.3\\r\\nZHD|19990719125635|^^00000001|TRAININGAdmin\\r\\nPID||9081361205^^^BC^PH\\r\\nIN1||||||||3131182||123|^^1234|20010601\\r\\nZIA||||||||||||||||123 FIRST ST^TOWN BC^^^^^^^^^^^^^^^^^^^^V9A1H9^^H|^PH^PH^^^123^1235555~^PH^PH^^^999^1115555\\r\\nNK1|||SP||||||||||||||||||||||||||||||9073094356^^^BC^PH\\r\\nNK1|||DP||||||||||||||||||||||||||||||9876913098^^^BC^PH\\r\\nNK1|||DP||||||||||||||||||||||||||||||9083410453^^^BC^PH\",\"contentType\":\"x-application\\/hl7-v2+er7\"}}],\"resourceType\":\"DocumentReference\",\"status\":\"current\"}";
+		String actualString = fhirObj.toJSONString();
+		assertEquals(expectedJsonString,actualString);
+	}
+
+	@Test
+	public void testIsJSONMsgr30()  {	
+		JSONObject fhirObj = FHIRJsonUtil.createFHIRJsonObj(msgr30);
+		assertTrue(JSONValue.isValidJson(fhirObj.toJSONString()));
+	}
+	
+	@Test
+	public void testCreateFHIRJsonObj_msgR31()  {
+		JSONObject fhirObj = FHIRJsonUtil.createFHIRJsonObj(msgR31);
+		String expectedJsonString = "{\"content\":[{\"attachment\":{\"data\":\"MSH|^~\\\\&|HR|BC00000098|RAIEST_PYR-RLDP|BC0003000|19991013153348|PM33283|R31|19980915000015|D|2.3\\r\\nZHD|19991013153348|^^00000001|TRAININGAdmin\\r\\nPID||9074790865^^^BC345^PH|12345678901234567890^^^BC345^MH\\r\\nIN1||||||||1250000||||20010101\\r\\nNK1|||12||||||||||||||||||||||||||||||1234567890^^^12345^12\\r\\nZSG|||||\",\"contentType\":\"x-application\\/hl7-v2+er7\"}}],\"resourceType\":\"DocumentReference\",\"status\":\"current\"}";
+		String actualString = fhirObj.toJSONString();
+		assertEquals(expectedJsonString,actualString);
+	}
+	
+	@Test
+	public void testParseFHIRJsonObj_msgE45()  {
+		FHIRJsonMessage fhirJson = FHIRJsonUtil.parseJson2FHIRMsg(FHIRJsonUtil.createFHIRJsonObj(msgE45));
+		String data = fhirJson.getV2MessageData();
+		assertEquals(fhirJson.getContentType(),"x-application/hl7-v2+er7");
+		assertEquals(fhirJson.getRecourceType(),"DocumentReference");
+		assertEquals(fhirJson.getStatus(),"current");
+	    assertEquals(data,msgE45);
+	}
+	
+	@Test
+	public void testParseFHIRJsonObj_msgr30()  {
+		FHIRJsonMessage fhirJson = FHIRJsonUtil.parseJson2FHIRMsg(FHIRJsonUtil.createFHIRJsonObj(msgr30));
+		String data = fhirJson.getV2MessageData();
+		assertEquals(fhirJson.getContentType(),"x-application/hl7-v2+er7");
+		assertEquals(fhirJson.getRecourceType(),"DocumentReference");
+		assertEquals(fhirJson.getStatus(),"current");
+	    assertEquals(data,msgr30);
+	}
+
+	@Test
+	public void testParseFHIRJsonObj_msgR31()  {
+		FHIRJsonMessage fhirJson = FHIRJsonUtil.parseJson2FHIRMsg(FHIRJsonUtil.createFHIRJsonObj(msgR31));
+		String data = fhirJson.getV2MessageData();
+		assertEquals(fhirJson.getContentType(),"x-application/hl7-v2+er7");
+		assertEquals(fhirJson.getRecourceType(),"DocumentReference");
+		assertEquals(fhirJson.getStatus(),"current");
+	    assertEquals(data,msgR31);
+	}
 }
