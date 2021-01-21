@@ -22,6 +22,11 @@ public class Base64Test {
 		
 	}
 	
+	/**
+	 * @param base64EncodedString
+	 * @return
+	 * @throws Exception
+	 */
 	public  byte[] ConvertFromBase64String(String base64EncodedString) throws Exception
     {
         if (base64EncodedString == null || base64EncodedString.length() == 0)
