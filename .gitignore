@@ -5,3 +5,9 @@ hnclient-v2/target/
 hnclient-v2/.idea/*
 mock-point-of-service/target/
 mock-point-of-service/.idea/*
+.project
+hnclient-v2/.classpath
+hnclient-v2/.settings/org.eclipse.core.resources.prefs
+*.prefs
+mock-point-of-service/.classpath
+hnclient-v2/src/main/java/ca/bc/gov/hlth/hnclientv2/tmp/output/hni.txt
