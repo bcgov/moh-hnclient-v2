@@ -3,6 +3,7 @@ package ca.bc.gov.hlth.hnclientv2;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
+import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
 import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
@@ -63,19 +64,21 @@ public class Route extends RouteBuilder {
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
         // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
         renewKeys();
-     
-        from("netty:tcp://{{hostname}}:{{port}}")
-            .log("Retrieving access token")
-            .setHeader("Authorization").method(retrieveAccessToken)
-            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-            .log("Sending to HNSecure")
-            .setBody().method(new Base64Encoder())
-            .log("v2Message encoded to Base64 format")
-            .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
-            .log("Received response from HNSecure")
-            .convertBodyTo(String.class)
-            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-            .convertBodyTo(ByteBuf.class);
+
+        from("netty:tcp://{{hostname}}:{{port}}")        		
+                .log("Retrieving access token")
+                .setHeader("Authorization").method(retrieveAccessToken)
+                .log("Receiving message and try to create a JSON message")
+                //process a HLV2 message to a FHIR JSON message
+                .setBody().method(new Base64Encoder())
+        		.process(new ProcessV2ToJson()).id("ProcessV2ToJson")
+                .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+                .log("Sending to HNSecure")
+                .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
+                .log("Received response from HNSecure")
+                .convertBodyTo(String.class)
+                .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+                .convertBodyTo(ByteBuf.class);
     }
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {
