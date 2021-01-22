@@ -23,10 +23,10 @@ public class Base64Encoder {
 
     @Handler
     public String convertToBase64String(String vMessage) {
-
-        logger.info("vMessage----" + vMessage);
+        
+        logger.debug("v2HL7 message to be encoded: {}", vMessage);       
         String encodedString = encodeString(vMessage);
-        logger.info("Message encoded successfully");
+        logger.debug("Message encoded successfully : {}", encodedString);
 
         return encodedString;
 
