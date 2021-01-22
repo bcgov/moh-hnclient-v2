@@ -5,6 +5,7 @@ import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
+import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
 import io.netty.buffer.ByteBuf;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
@@ -64,17 +65,17 @@ public class Route extends RouteBuilder {
         renewKeys();
      
         from("netty:tcp://{{hostname}}:{{port}}")
-        .log("Retrieving access token")
-        .setHeader("Authorization").method(retrieveAccessToken)
-        .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-        .log("Sending to HNSecure")
-        .setBody().method(new Base64Encoder())
-        .log("v2Message encoded to Base64 format")
-        .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
-        .log("Received response from HNSecure")
-        .convertBodyTo(String.class)
-        .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-        .convertBodyTo(ByteBuf.class);
+            .log("Retrieving access token")
+            .setHeader("Authorization").method(retrieveAccessToken)
+            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+            .log("Sending to HNSecure")
+            .setBody().method(new Base64Encoder())
+            .log("v2Message encoded to Base64 format")
+            .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
+            .log("Received response from HNSecure")
+            .convertBodyTo(String.class)
+            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+            .convertBodyTo(ByteBuf.class);
     }
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {
