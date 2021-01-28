@@ -89,25 +89,7 @@ public class HandshakeServerTest {
     	String ret_code = HandshakeServer.verifyHandshakeResponse(clientHandshakeData, handShakeData, XFER_HANDSHAKE_SEED);
     	assertTrue(ret_code.equals(HNET_RTRN_INVALIDFORMATERROR));
     }
-    /**
-     * @param base64EncodedString
-     * @return
-     * @throws Exception
-     */
-    public byte[] ConvertFromBase64String(String base64EncodedString) throws Exception {
-        if (base64EncodedString == null || base64EncodedString.length() == 0)
-            throw new IllegalArgumentException("You must supply byte string for Base64 decoding operation");
-
-        if (base64EncodedString.length() % 4 != 0)
-            throw new IllegalArgumentException("The BASE-64 encoded data is not in correct form (divide by 4 resulted in a remainder)");
-
-        try {
-            return Base64.getDecoder().decode(base64EncodedString);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Unable to decode Base-64 string supplied for operation. Please check your inputs");
-        }
-    }
+    
 
 
 }
