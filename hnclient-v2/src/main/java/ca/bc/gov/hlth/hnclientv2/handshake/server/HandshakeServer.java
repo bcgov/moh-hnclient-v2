@@ -6,7 +6,7 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class HandshakeServer {
+public class HandshakeServer {
 
 	private static int XFER_HANDSHAKE_SEED = 0;
 	private static int XFER_HANDSHAKE_SIZE = 8;
@@ -26,11 +26,10 @@ class HandshakeServer {
 		
 			while (true) {
 				Socket connectionSocket = mysocket.accept();
+				
 				BufferedInputStream socketInput = new BufferedInputStream(connectionSocket.getInputStream(), 1000);
-
 				BufferedOutputStream socketOutput = new BufferedOutputStream(connectionSocket.getOutputStream());
-				System.out.println(socketInput.available());
-
+			
 				String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 				System.out.println("Handshake is done with the message: {}"+ ret_code);
 				logger.debug("Handshake is done with the message: {}", ret_code);
@@ -65,11 +64,6 @@ class HandshakeServer {
 		if (retCode.equals(HNET_RTRN_SUCCESS))
 			retCode = generateHandshakeData(handshakeData);
 		
-		for(int i = 0; i<handshakeData.length; i++)
-		{
-			System.out.println("random number--"+(int)handshakeData[i]);
-		}
-
 		/** Now send the Handshake Segment Header. */
 
 		if (retCode.equals(HNET_RTRN_SUCCESS)) {
@@ -157,7 +151,7 @@ class HandshakeServer {
 	 * @param XFER_HANDSHAKE_SIZE
 	 * @return Suucess/ Failure message
 	 */
-	protected static String verifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData,
+	public static String verifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData,
 			int XFER_HANDSHAKE_SIZE) {
 		String retCode = HNET_RTRN_SUCCESS;
 		
@@ -174,7 +168,7 @@ class HandshakeServer {
 		return retCode;
 	}
 
-	protected static String generateHandshakeData(byte[] handShakeData) {
+	public static String generateHandshakeData(byte[] handShakeData) {
 		String ret_code = HNET_RTRN_SUCCESS;
 		if (handShakeData == null)
 			ret_code = HNET_RTRN_INVALIDPARAMETER;
@@ -202,7 +196,7 @@ class HandshakeServer {
 	 * @param traceBuffer  The buffer to place diagnostic and tracing information.
 	 */
 
-	private static String scrambleData(byte[] dataBuffer, int scrambleLen, int scrambleSeed, String segmentType) {
+	public static String scrambleData(byte[] dataBuffer, int scrambleLen, int scrambleSeed, String segmentType) {
 
 		String retCode = HNET_RTRN_SUCCESS;
 
