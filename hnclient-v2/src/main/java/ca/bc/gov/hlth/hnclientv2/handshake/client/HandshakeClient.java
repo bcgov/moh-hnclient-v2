@@ -44,7 +44,7 @@ public class HandshakeClient {
 	        // Read 12 bytes of HandShake Segment and 8 bytes of HandShake data
 	    	System.out.println("Reading handshake data client side");
 	        socketInput.read(handShakeSegment, 0, 12);	        
-	       // socketInput.read(handShakeData, 0, 8);
+	        socketInput.read(handShakeData, 0, 8);
 	      
 	        // write 12 bytes of HS response to BufferedOutputStream
 	        socketOutput.write("HS0000000008".getBytes(),0,12);

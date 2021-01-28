@@ -64,6 +64,11 @@ class HandshakeServer {
 
 		if (retCode.equals(HNET_RTRN_SUCCESS))
 			retCode = generateHandshakeData(handshakeData);
+		
+		for(int i = 0; i<handshakeData.length; i++)
+		{
+			System.out.println("random number--"+(int)handshakeData[i]);
+		}
 
 		/** Now send the Handshake Segment Header. */
 
@@ -175,7 +180,7 @@ class HandshakeServer {
 			ret_code = HNET_RTRN_INVALIDPARAMETER;
 		else {
 			// create random object
-			Random r = new Random();
+			Random r = new Random(System.currentTimeMillis());
 			// put the next byte in the array
 			r.nextBytes(handShakeData);
 		}
