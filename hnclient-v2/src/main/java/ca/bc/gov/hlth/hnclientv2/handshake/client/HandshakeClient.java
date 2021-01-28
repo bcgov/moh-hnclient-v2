@@ -21,7 +21,7 @@ public class HandshakeClient {
 	    int numSocketReadTries = 0;
 	   
 	   try{
-		    //Socket socketClient= new Socket("localhost",5555);
+		   
 	    System.out.println("Client: "+"Connection Established");
 	    Socket netSocket = new Socket("127.0.0.1", 5555);
 	    
@@ -31,8 +31,8 @@ public class HandshakeClient {
 	      BufferedOutputStream socketOutput =
 	          new BufferedOutputStream(netSocket.getOutputStream());      
 	      
-	      System.out.println("waitng for HNClent");
-	   // wait for data from HNClient
+	      System.out.println("Waitng for HNClient");
+	   // Wait for data from HNClient
 	      while (socketInput.available() < 1 && numSocketReadTries < MAX_SOCKET_READ_TRIES) {
 	        numSocketReadTries++;
 	        java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
@@ -41,10 +41,10 @@ public class HandshakeClient {
 
 	      // data available for read in BufferedInputStream
 	      if (socketInput.available() > 0) {    	  
-	        // read 12 bytes of HandShake Segment and 8 bytes of HandShake data
+	        // Read 12 bytes of HandShake Segment and 8 bytes of HandShake data
 	    	System.out.println("Reading handshake data client side");
 	        socketInput.read(handShakeSegment, 0, 12);	        
-	        socketInput.read(handShakeData, 0, 8);
+	       // socketInput.read(handShakeData, 0, 8);
 	      
 	        // write 12 bytes of HS response to BufferedOutputStream
 	        socketOutput.write("HS0000000008".getBytes(),0,12);
