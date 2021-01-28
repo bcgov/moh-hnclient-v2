@@ -6,8 +6,6 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
-
 class HandshakeServer {
 
 	private static int XFER_HANDSHAKE_SEED = 0;
@@ -17,7 +15,7 @@ class HandshakeServer {
 	private static String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
 	private static String HNET_RTRN_INVALIDFORMATERROR = "HNET_RTRN_INVALIDFORMATERROR";
 
-	private static Logger logger = LoggerFactory.getLogger(Base64Encoder.class);
+	private static Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
 
 	public static void main(String args[]){
 
@@ -143,17 +141,25 @@ class HandshakeServer {
 
 			// read and verify the handshake data
 			ios.read(clientHandshakeData, 0, 8);
-			retCode = lcl_VerifyHandshakeResponse(clientHandshakeData, handShakeData, XFER_HANDSHAKE_SIZE);
+			retCode = verifyHandshakeResponse(clientHandshakeData, handShakeData, XFER_HANDSHAKE_SIZE);
 		}
 		return retCode;
 	}
 
-	protected static String lcl_VerifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData,
+	/**
+	 * @param clientHandshakeData
+	 * @param originalHandshakeData
+	 * @param XFER_HANDSHAKE_SIZE
+	 * @return Suucess/ Failure message
+	 */
+	protected static String verifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData,
 			int XFER_HANDSHAKE_SIZE) {
 		String retCode = HNET_RTRN_SUCCESS;
-
+		
+		//Scramble the original handshake data
 		scrambleData(originalHandshakeData, XFER_HANDSHAKE_SIZE, XFER_HANDSHAKE_SEED, XFER_HS_SEGMENT);
 
+		//Compare client handshake data and original handshake data
 		if (!compareByteArray(clientHandshakeData, originalHandshakeData)) {
 			logger.debug("Received handshake data does not match expected data");
 			retCode = HNET_RTRN_INVALIDFORMATERROR;
@@ -238,18 +244,18 @@ class HandshakeServer {
 		return new String(scrambleByte);
 	}
 
-	public static boolean compareByteArray(byte[] a, byte[] a2) {
-		if (a == a2)
+	public static boolean compareByteArray(byte[] clietData, byte[] originalData) {
+		if (clietData == originalData)
 			return true;
-		if (a == null || a2 == null)
+		if (clietData == null || originalData == null)
 			return false;
 
-		int length = a.length;
-		if (a2.length != length)
+		int length = clietData.length;
+		if (originalData.length != length)
 			return false;
 
 		for (int i = 0; i < length; i++)
-			if (a[i] != a2[i])
+			if (clietData[i] != originalData[i])
 				return false;
 
 		return true;
