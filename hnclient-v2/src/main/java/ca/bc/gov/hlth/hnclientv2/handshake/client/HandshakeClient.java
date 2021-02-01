@@ -1,13 +1,11 @@
 package ca.bc.gov.hlth.hnclientv2.handshake.client;
 
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.net.Socket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
 
 public class HandshakeClient {
 
@@ -20,6 +18,7 @@ public class HandshakeClient {
 	private static byte handShakeData[] = new byte[8];
 	
 	private static Logger logger = LoggerFactory.getLogger(HandshakeClient.class);
+	
 
 	public static void main(String args[]) {
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
@@ -33,13 +32,15 @@ public class HandshakeClient {
 
 			BufferedInputStream socketInput = new BufferedInputStream(netSocket.getInputStream(), 1000);
 			BufferedOutputStream socketOutput = new BufferedOutputStream(netSocket.getOutputStream());
-
+		
 			logger.debug("Waitng for HNClient");
+			System.out.println("Waitng for HNClient");
 			// Wait for data from HNClient
 			while (socketInput.available() < 1 && numSocketReadTries < MAX_SOCKET_READ_TRIES) {
 				numSocketReadTries++;
 				java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
 				logger.debug("Waiting for Listener ");
+				System.out.println("Waitng for HNClient");
 			}
 
 			// data available for read in BufferedInputStream
@@ -55,12 +56,18 @@ public class HandshakeClient {
 
 				// write 8 bytes of scrambled HandShake data to BufferedOutputStream
 				socketOutput.write(scrambleData(handShakeData), 0, 8);
+				// System.out.println("Wrote HSData to listener");
+
 				// set decodeSeed to last byte of scrambled handShakeData
 				decodeSeed = handShakeData[7];
 
-				// System.out.println("Wrote HSData to listener");
 				socketOutput.flush();
-
+				
+				//Write the HL7v2 message and send it to listenere
+				socketOutput.write("My first HL7 message".getBytes(),0,12);
+				
+				socketOutput.flush();
+				
 				if (netSocket != null) {
 					socketInput.close();
 					socketOutput.close();

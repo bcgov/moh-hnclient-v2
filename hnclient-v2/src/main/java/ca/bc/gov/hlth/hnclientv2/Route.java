@@ -3,11 +3,15 @@ package ca.bc.gov.hlth.hnclientv2;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
 import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
+import ca.bc.gov.hlth.hnclientv2.handshake.client.HandshakeClient;
+import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
 import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
 import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
 import io.netty.buffer.ByteBuf;
+
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
@@ -57,6 +61,9 @@ public class Route extends RouteBuilder {
      *   4. Passes the message to an http endpoint with the JWT attached
      *   5. Returns the response
      */
+    /**
+     *
+     */
     @Override
     public void configure() throws Exception {
 
@@ -65,20 +72,28 @@ public class Route extends RouteBuilder {
         // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
         renewKeys();
 
-        from("netty:tcp://{{hostname}}:{{port}}")        		
-                .log("Retrieving access token")
-                .setHeader("Authorization").method(retrieveAccessToken)
-                .log("Receiving message and try to create a JSON message")
-                //process a HLV2 message to a FHIR JSON message
-                .setBody().method(new Base64Encoder())
-        		.process(new ProcessV2ToJson()).id("ProcessV2ToJson")
-                .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-                .log("Sending to HNSecure")
-                .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
-                .log("Received response from HNSecure")
-                .convertBodyTo(String.class)
-                .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-                .convertBodyTo(ByteBuf.class);
+		
+		
+		
+		/*
+		 * from("netty:tcp://{{hostname}}:{{port}}") .log("Retrieving access token")
+		 * .setHeader("Authorization").method(retrieveAccessToken)
+		 * .log("Receiving message and try to create a JSON message") //process a HLV2
+		 * // message to a FHIR JSON message .setBody().method(new Base64Encoder())
+		 * .process(new ProcessV2ToJson()).id("ProcessV2ToJson") .to(
+		 * "log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+		 * .log("Sending to HNSecure") .to(
+		 * "http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
+		 * .log("Received response from HNSecure") .convertBodyTo(String.class) .to(
+		 * "log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+		 * .convertBodyTo(ByteBuf.class);
+		 */
+		 
+		 		
+        from("direct:start")
+        .log("logging")
+        .to("log:" + getClass().getName());
+  
     }
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {

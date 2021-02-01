@@ -3,6 +3,15 @@ package ca.bc.gov.hlth.hnclientv2.handshake.server;
 import java.io.*;
 import java.net.*;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.apache.camel.Consume;
+import org.apache.camel.Converter;
+import org.apache.camel.EndpointInject;
+import org.apache.camel.Handler;
+import org.apache.camel.Produce;
+import org.apache.camel.ProducerTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,28 +26,83 @@ public class HandshakeServer {
 
 	private static Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
 
-	public static void main(String args[]){
+	@EndpointInject("direct:start")
 
-		System.out.println(" Server is Running  ");
-		logger.debug("HandShakeServer is running");
-		try {
-		ServerSocket mysocket = new ServerSocket(5555);
-		
-			while (true) {
-				Socket connectionSocket = mysocket.accept();
-				
-				BufferedInputStream socketInput = new BufferedInputStream(connectionSocket.getInputStream(), 1000);
-				BufferedOutputStream socketOutput = new BufferedOutputStream(connectionSocket.getOutputStream());
-			
-				String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
-				System.out.println("Handshake is done with the message: {}"+ ret_code);
-				logger.debug("Handshake is done with the message: {}", ret_code);
+	ProducerTemplate producer;
 
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+	public HandshakeServer() {
+		System.out.println("constructor is called");
+		startServer();
+
 		}
-	}
+	
+	public void startServer() {
+     
+        Runnable serverTask = new Runnable() {
+            @Override
+            public void run() {
+        		try {
+        			ServerSocket mysocket = new ServerSocket(5555);
+
+        			while (true) {
+        				Socket connectionSocket = mysocket.accept();
+
+        				BufferedInputStream socketInput = new BufferedInputStream(connectionSocket.getInputStream(), 1000);
+        				BufferedOutputStream socketOutput = new BufferedOutputStream(connectionSocket.getOutputStream());
+
+        				String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
+
+        				if (ret_code.contentEquals(HNET_RTRN_SUCCESS)) {
+        					byte[] message = new byte[12];
+
+        					socketInput.read(message, 0, 12);
+        					for(int i = 0;i<message.length;i++)
+        						System.out.println((char)message[i]);
+        				}
+        				System.out.println("Handshake is done with the message: {}" + ret_code);
+        				logger.debug("Handshake is done with the message: {}", ret_code);
+
+        			}
+        		} catch (Exception e) {
+        			e.printStackTrace();
+        		}
+            }
+        };
+        Thread serverThread = new Thread(serverTask);
+        serverThread.start();
+
+    }
+
+	/*
+	 * public static void main(String args[]) {
+	 * 
+	 * System.out.println(" Server is Running  ");
+	 * logger.debug("HandShakeServer is running"); try { ServerSocket mysocket = new
+	 * ServerSocket(5555);
+	 * 
+	 * while (true) { Socket connectionSocket = mysocket.accept();
+	 * 
+	 * BufferedInputStream socketInput = new
+	 * BufferedInputStream(connectionSocket.getInputStream(), 1000);
+	 * BufferedOutputStream socketOutput = new
+	 * BufferedOutputStream(connectionSocket.getOutputStream()); //
+	 * System.out.println(producer.getCurrentCacheSize()); //
+	 * producer.sendBody("netty:tcp://" + "127.0.0.1" + ":" + 5555 + "?sync=false",
+	 * // "hell0");
+	 * 
+	 * String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput,
+	 * XFER_HANDSHAKE_SEED);
+	 * 
+	 * if (ret_code.equals(HNET_RTRN_SUCCESS)) {
+	 * System.out.println("handshake is successful"); byte[] message = new byte[12];
+	 * 
+	 * socketInput.read(message, 0, 12); for (int i = 0; i < message.length; i++) {
+	 * System.out.println((char) message[i]); } System.out.println(message); }
+	 * System.out.println("Handshake is done with the message: {}" + ret_code);
+	 * logger.debug("Handshake is done with the message: {}", ret_code);
+	 * 
+	 * } } catch (Exception e) { e.printStackTrace(); } }
+	 */
 
 	/*----------------------------------------------------------------------------
 	 *This function computes the original handshake challenge data for the 
@@ -63,7 +127,7 @@ public class HandshakeServer {
 
 		if (retCode.equals(HNET_RTRN_SUCCESS))
 			retCode = generateHandshakeData(handshakeData);
-		
+
 		/** Now send the Handshake Segment Header. */
 
 		if (retCode.equals(HNET_RTRN_SUCCESS)) {
@@ -154,11 +218,11 @@ public class HandshakeServer {
 	public static String verifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData,
 			int XFER_HANDSHAKE_SIZE) {
 		String retCode = HNET_RTRN_SUCCESS;
-		
-		//Scramble the original handshake data
+
+		// Scramble the original handshake data
 		scrambleData(originalHandshakeData, XFER_HANDSHAKE_SIZE, XFER_HANDSHAKE_SEED, XFER_HS_SEGMENT);
 
-		//Compare client handshake data and original handshake data
+		// Compare client handshake data and original handshake data
 		if (!compareByteArray(clientHandshakeData, originalHandshakeData)) {
 			logger.debug("Received handshake data does not match expected data");
 			retCode = HNET_RTRN_INVALIDFORMATERROR;
@@ -258,6 +322,17 @@ public class HandshakeServer {
 				return false;
 
 		return true;
+	}
+
+	@Handler
+	public String sendRandomData() {
+
+		System.out.println("inside Random Data");
+
+		// logger.debug("Message encoded successfully : {}", encodedString);
+
+		return "HS0000000008";
+
 	}
 
 }
