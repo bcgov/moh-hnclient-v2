@@ -2,7 +2,9 @@ package ca.bc.gov.hlth.hnclientv2.handshake.server;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,54 +26,96 @@ public class HandshakeServer {
 	private static String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
 	private static String HNET_RTRN_INVALIDFORMATERROR = "HNET_RTRN_INVALIDFORMATERROR";
 
+	private static byte decodeSeed = 0;
+
 	private static Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
 
 	@EndpointInject("direct:start")
 
-	ProducerTemplate producer;
-
 	public HandshakeServer() {
-		System.out.println("constructor is called");
+		System.out.println("Constructor is called");
 		startServer();
 
-		}
-	
+	}
+
 	public void startServer() {
-     
-        Runnable serverTask = new Runnable() {
-            @Override
-            public void run() {
-        		try {
-        			ServerSocket mysocket = new ServerSocket(5555);
 
-        			while (true) {
-        				Socket connectionSocket = mysocket.accept();
+		Runnable serverTask = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					ServerSocket mysocket = new ServerSocket(5555);
 
-        				BufferedInputStream socketInput = new BufferedInputStream(connectionSocket.getInputStream(), 1000);
-        				BufferedOutputStream socketOutput = new BufferedOutputStream(connectionSocket.getOutputStream());
+					while (true) {
+						Socket connectionSocket = mysocket.accept();
 
-        				String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
+						BufferedInputStream socketInput = new BufferedInputStream(connectionSocket.getInputStream(),
+								1000);
+						BufferedOutputStream socketOutput = new BufferedOutputStream(
+								connectionSocket.getOutputStream());
+						BufferedReader r = new BufferedReader(
+								new InputStreamReader(socketInput, StandardCharsets.UTF_8));
 
-        				if (ret_code.contentEquals(HNET_RTRN_SUCCESS)) {
-        					byte[] message = new byte[12];
+						String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 
-        					socketInput.read(message, 0, 12);
-        					for(int i = 0;i<message.length;i++)
-        						System.out.println((char)message[i]);
-        				}
-        				System.out.println("Handshake is done with the message: {}" + ret_code);
-        				logger.debug("Handshake is done with the message: {}", ret_code);
+						System.out.println("Handshake is done with the message: {}" + ret_code);
 
-        			}
-        		} catch (Exception e) {
-        			e.printStackTrace();
-        		}
-            }
-        };
-        Thread serverThread = new Thread(serverTask);
-        serverThread.start();
+						if (ret_code.contentEquals(HNET_RTRN_SUCCESS)) {
+							// socketInput.read();
+							// read SI segment
+							if (socketInput.available() > 0) {
+								byte[] message = new byte[44];
 
-    }
+								socketInput.read(message);
+								unScrambleData(message);
+
+								String output = new String(message, "UTF-8");
+								Scanner s = new Scanner(output);
+								while (s.hasNextLine()) {
+									System.out.println(s.nextLine());
+								}
+							}
+
+							// read dtsegment header
+							if (socketInput.available() > 0) {
+								byte[] dtsegment = new byte[12];
+								socketInput.read(dtsegment, 0, 12);
+								unScrambleData(dtsegment);
+
+								String output1 = new String(dtsegment, "UTF-8");
+								Scanner s1 = new Scanner(output1);
+								while (s1.hasNextLine()) {
+									System.out.println(s1.nextLine());
+								}
+							}
+
+							//read dtsegment data
+							if (socketInput.available() > 0) {
+
+								byte[] message2 = socketInput.readAllBytes();
+								unScrambleData(message2);
+
+								String output2 = new String(message2, "UTF-8");
+								Scanner s2 = new Scanner(output2);
+								while (s2.hasNextLine()) {
+									System.out.println(s2.nextLine());
+								}
+							}
+
+						}
+						System.out.println("HL7 transaction is done");
+						logger.debug("HL7 transaction is done: {}", ret_code);
+
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		Thread serverThread = new Thread(serverTask);
+		serverThread.start();
+
+	}
 
 	/*
 	 * public static void main(String args[]) {
@@ -293,13 +337,25 @@ public class HandshakeServer {
 	 * @param scrambleByte byte[]
 	 * @return
 	 */
-	public String unScrambleData(byte[] scrambleByte, int unscrambleLen, byte unscrambleSeed, String segmentType) {
+	public String unScrambleData1(byte[] scrambleByte, int unscrambleLen, byte unscrambleSeed, String segmentType) {
 		if (scrambleByte == null)
 			return HNET_RTRN_INVALIDPARAMETER;
 
 		byte prevByte = scrambleByte[0];
 		scrambleByte[0] ^= unscrambleSeed;
 		for (int x = 1; x < scrambleByte.length; x++) {
+			byte currByte = scrambleByte[x];
+			scrambleByte[x] ^= prevByte;
+			prevByte = currByte;
+		}
+		return new String(scrambleByte);
+	}
+
+	public String unScrambleData(byte[] scrambleByte) {
+
+		byte prevByte = scrambleByte[0];
+		scrambleByte[0] ^= decodeSeed;
+		for (int x = 1; x < scrambleByte.length; ++x) {
 			byte currByte = scrambleByte[x];
 			scrambleByte[x] ^= prevByte;
 			prevByte = currByte;
@@ -324,15 +380,19 @@ public class HandshakeServer {
 		return true;
 	}
 
-	@Handler
-	public String sendRandomData() {
-
-		System.out.println("inside Random Data");
-
-		// logger.debug("Message encoded successfully : {}", encodedString);
-
-		return "HS0000000008";
-
+	private static byte[] readStream(InputStream is) throws Exception {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] buff = new byte[1024];
+		int len = is.read(buff);
+		while (len > 0) {
+			baos.write(buff, 0, len);
+			if (len == buff.length) {
+				len = is.read(buff);
+			} else {
+				len = 0;
+			}
+		}
+		return baos.toByteArray();
 	}
 
 }

@@ -10,7 +10,7 @@ import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
 public class MainMethod {
 
 	public static void main(String... args) throws Exception {
-		System.out.println("main method");
+		System.out.println("Main method");
 
 		HandshakeServer myServer = new HandshakeServer();
 

@@ -1,13 +1,10 @@
-package ca.bc.gov.hlth.hnclientv2.handshake.client;
+package com.cgi.hl7v2sendmessage;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Scanner;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HandshakeClient {
 
@@ -19,7 +16,7 @@ public class HandshakeClient {
 	private static byte handShakeSegment[] = new byte[12];
 	private static byte handShakeData[] = new byte[8];
 
-	//define ten cute little 0's contained in the hnclient's heart beat.
+	// define ten cute little 0's contained in the hnclient's heart beat.
 	private static final String TEN_ZEROS = "0000000000";
 
 	// DT segments to send to HNClient
@@ -33,8 +30,6 @@ public class HandshakeClient {
 	private static String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
 			+ "ZHD|20170125122125|^^00000010|HNAIADMINISTRATION||||2.4\n" + "PID||1234567890^^^BC^PH";
 
-	private static Logger logger = LoggerFactory.getLogger(HandshakeClient.class);
-
 	public static void main(String args[]) {
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
@@ -42,19 +37,17 @@ public class HandshakeClient {
 
 		try {
 
+			System.out.println("Client: " + "Connection Establishedddd");
 			Socket netSocket = new Socket("127.0.0.1", 5555);
 
 			BufferedInputStream socketInput = new BufferedInputStream(netSocket.getInputStream(), 1000);
 			BufferedOutputStream socketOutput = new BufferedOutputStream(netSocket.getOutputStream());
 
-			logger.debug("Waitng for HNClient");
-			System.out.println("Waitng for HNClient");
 			// Wait for data from HNClient
 			while (socketInput.available() < 1 && numSocketReadTries < MAX_SOCKET_READ_TRIES) {
 				numSocketReadTries++;
 				java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
-				logger.debug("Waiting for Listener ");
-
+				System.out.println("Waitng for HNClient");
 			}
 
 			// data available for read in BufferedInputStream
@@ -70,7 +63,6 @@ public class HandshakeClient {
 
 				// write 8 bytes of scrambled HandShake data to BufferedOutputStream
 				socketOutput.write(scrambleData(handShakeData), 0, 8);
-				// System.out.println("Wrote HSData to listener");
 
 				// set decodeSeed to last byte of scrambled handShakeData
 				// decodeSeed = handShakeData[7];
@@ -79,7 +71,7 @@ public class HandshakeClient {
 
 				// separate DT Segment from HL7 message (aMessage)
 				dataSegmentout = dtSegment.substring(0, 12).getBytes("UTF-8");
-				
+				System.out.println("datasegmentout---" + dataSegmentout);
 				dataHL7out = dtSegment.substring(12).getBytes("UTF-8");
 
 				// grab the hostname of the computer
