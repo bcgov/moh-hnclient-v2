@@ -117,36 +117,7 @@ public class HandshakeServer {
 
 	}
 
-	/*
-	 * public static void main(String args[]) {
-	 * 
-	 * System.out.println(" Server is Running  ");
-	 * logger.debug("HandShakeServer is running"); try { ServerSocket mysocket = new
-	 * ServerSocket(5555);
-	 * 
-	 * while (true) { Socket connectionSocket = mysocket.accept();
-	 * 
-	 * BufferedInputStream socketInput = new
-	 * BufferedInputStream(connectionSocket.getInputStream(), 1000);
-	 * BufferedOutputStream socketOutput = new
-	 * BufferedOutputStream(connectionSocket.getOutputStream()); //
-	 * System.out.println(producer.getCurrentCacheSize()); //
-	 * producer.sendBody("netty:tcp://" + "127.0.0.1" + ":" + 5555 + "?sync=false",
-	 * // "hell0");
-	 * 
-	 * String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput,
-	 * XFER_HANDSHAKE_SEED);
-	 * 
-	 * if (ret_code.equals(HNET_RTRN_SUCCESS)) {
-	 * System.out.println("handshake is successful"); byte[] message = new byte[12];
-	 * 
-	 * socketInput.read(message, 0, 12); for (int i = 0; i < message.length; i++) {
-	 * System.out.println((char) message[i]); } System.out.println(message); }
-	 * System.out.println("Handshake is done with the message: {}" + ret_code);
-	 * logger.debug("Handshake is done with the message: {}", ret_code);
-	 * 
-	 * } } catch (Exception e) { e.printStackTrace(); } }
-	 */
+
 
 	/*----------------------------------------------------------------------------
 	 *This function computes the original handshake challenge data for the 
