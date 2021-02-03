@@ -65,41 +65,25 @@ public class HandshakeServer {
 							// read SI segment
 							if (socketInput.available() > 0) {
 								byte[] message = new byte[44];
-
 								socketInput.read(message);
-								unScrambleData(message);
-
-								String output = new String(message, "UTF-8");
-								Scanner s = new Scanner(output);
-								while (s.hasNextLine()) {
-									System.out.println(s.nextLine());
-								}
+								extractData(message);
+								logger.info("Completed reading SI Segment");
 							}
 
 							// read dtsegment header
 							if (socketInput.available() > 0) {
 								byte[] dtsegment = new byte[12];
 								socketInput.read(dtsegment, 0, 12);
-								unScrambleData(dtsegment);
-
-								String output1 = new String(dtsegment, "UTF-8");
-								Scanner s1 = new Scanner(output1);
-								while (s1.hasNextLine()) {
-									System.out.println(s1.nextLine());
-								}
+								extractData(dtsegment);
+								logger.info("Completed reading DT Segment");
 							}
 
 							//read dtsegment data
 							if (socketInput.available() > 0) {
 
 								byte[] message2 = socketInput.readAllBytes();
-								unScrambleData(message2);
-
-								String output2 = new String(message2, "UTF-8");
-								Scanner s2 = new Scanner(output2);
-								while (s2.hasNextLine()) {
-									System.out.println(s2.nextLine());
-								}
+								extractData(message2);
+								logger.info("Completed reading DT MSG Segment");
 							}
 
 						}
@@ -110,6 +94,17 @@ public class HandshakeServer {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+			}
+
+			private void extractData(byte[] dtsegment) throws UnsupportedEncodingException {
+				unScrambleData(dtsegment);
+
+				String output1 = new String(dtsegment, "UTF-8");
+				Scanner s1 = new Scanner(output1);
+				while (s1.hasNextLine()) {
+					System.out.println(s1.nextLine());
+				}
+				s1.close();
 			}
 		};
 		Thread serverThread = new Thread(serverTask);
