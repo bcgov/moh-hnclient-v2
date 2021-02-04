@@ -164,7 +164,7 @@ public class HandshakeServer {
 			retCode = recvVerifyHandshakeData(ios, handshakeData, clientHandshakeData);
 
 		if (retCode.equals(HNET_RTRN_SUCCESS))
-			handshakeSeed = XFER_HANDSHAKE_SIZE - 1;
+			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE-1];
 		else
 			System.out.println("Error recieveing handshakedata");
 
@@ -215,6 +215,7 @@ public class HandshakeServer {
 			// read and verify the handshake data
 			ios.read(clientHandshakeData, 0, 8);
 			retCode = verifyHandshakeResponse(clientHandshakeData, handShakeData, XFER_HANDSHAKE_SIZE);
+			//decodeSeed = handShakeData[7];
 		}
 		return retCode;
 	}

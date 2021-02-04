@@ -65,7 +65,8 @@ public class HandshakeClient {
 				socketOutput.write(scrambleData(handShakeData), 0, 8);
 
 				// set decodeSeed to last byte of scrambled handShakeData
-				// decodeSeed = handShakeData[7];
+				//Same decodeSeed be used to unscramble data on listener side
+				 decodeSeed = handShakeData[7];
 
 				String dtSegment = insertHeader(v2Msg);
 
