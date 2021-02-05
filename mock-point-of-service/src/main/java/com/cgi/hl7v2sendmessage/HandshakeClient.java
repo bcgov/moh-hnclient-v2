@@ -5,7 +5,6 @@ import java.io.BufferedOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-
 public class HandshakeClient {
 
 	private static Socket netSocket = null;
@@ -19,6 +18,10 @@ public class HandshakeClient {
 	// define ten cute little 0's contained in the hnclient's heart beat.
 	private static final String TEN_ZEROS = "0000000000";
 
+	// DT segments received from HNClient
+	private static byte dataSegmentin[] = new byte[12];
+	private static byte dataHL7in[];
+
 	// DT segments to send to HNClient
 	private static byte dataSegmentout[] = new byte[12];
 	private static byte dataHL7out[];
@@ -27,6 +30,15 @@ public class HandshakeClient {
 	private static StringBuffer ipAddress = new StringBuffer("                                            "); // 44
 																												// spaces
 
+	// data indicator
+	private static final String DATA_INDICATOR = "DT";
+	// message header indicator
+	public static final String HEADER_INDICATOR = "MSH";
+	// data indicator length
+	private static final int DATA_INDICATOR_LENGTH = 2;
+	// length indicator length
+	private static final int LENGTH_INDICATOR_LENGTH = 12;
+
 	private static String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
 			+ "ZHD|20170125122125|^^00000010|HNAIADMINISTRATION||||2.4\n" + "PID||1234567890^^^BC^PH";
 
@@ -34,10 +46,14 @@ public class HandshakeClient {
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 		int numSocketReadTries = 0;
+		String headerIn;
+		String HL7IN;
+
+		String aResponse = null;
 
 		try {
 
-			System.out.println("Client: " + "Connection Establishedddd");
+			System.out.println("Client: " + "Connection Established");
 			Socket netSocket = new Socket("127.0.0.1", 5555);
 
 			BufferedInputStream socketInput = new BufferedInputStream(netSocket.getInputStream(), 1000);
@@ -65,8 +81,8 @@ public class HandshakeClient {
 				socketOutput.write(scrambleData(handShakeData), 0, 8);
 
 				// set decodeSeed to last byte of scrambled handShakeData
-				//Same decodeSeed be used to unscramble data on listener side
-				 decodeSeed = handShakeData[7];
+				// Same decodeSeed be used to unscramble data on listener side
+				decodeSeed = handShakeData[7];
 
 				String dtSegment = insertHeader(v2Msg);
 
@@ -91,6 +107,90 @@ public class HandshakeClient {
 				// send Buffered OutputStream data to HNClient
 				socketOutput.flush();
 
+				// ******************************************************************************
+
+				// Read response
+				try {
+
+					// This guarantees us that we have a data header in the result
+					socketInput.read(dataSegmentin, 0, 12);
+
+					if (dataSegmentin.length > 0) {
+						System.out.println("dataSegmentin---------------"+dataSegmentin);
+						// data received from HNClient is in scrambled from and must be unscrambled
+						headerIn = unScrambleData(dataSegmentin);
+						System.out.println("POS headerIn -------"+headerIn);
+						numSocketReadTries = 0;
+						while (!headerIn.contains(DATA_INDICATOR)) {
+							socketInput.read(dataSegmentin, 0, 12);
+							//headerIn = unScrambleData(dataSegmentin);
+
+							if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+								numSocketReadTries++;
+								//
+								// Give other packets a chance to arrive and
+								// avoid trying to monopolize CPU time..
+								//
+								java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
+							} else {
+								//
+								// Give up eventually.
+								//
+								throw new Exception("Could not find DT Response.");
+							}
+						}
+
+						// Look for the start of data
+						if (headerIn.contains(DATA_INDICATOR)) {
+							System.out.println(headerIn);
+							int messageLength = Integer
+									.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
+
+							numSocketReadTries = 0;
+
+							while (socketInput.available() < messageLength) {
+								if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+									numSocketReadTries++;
+									//
+									// Give other packets a chance to arrive and
+									// avoid trying to monopolize CPU time..
+									//
+									java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
+								} else {
+									//
+									// Give up eventually.
+									//
+									throw new Exception("Could not find entire message.");
+								}
+							};
+							dataHL7in = new byte[messageLength];
+							socketInput.read(dataHL7in, 0, messageLength);
+							HL7IN = unScrambleData(dataHL7in);
+							
+							System.out.println("POS HL7in-----------"+HL7IN);
+
+							int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
+
+							if (indexOfMSG != -1) {
+								//
+								// Read whatever is after the MSH segment.
+								aResponse = HL7IN.substring(indexOfMSG) + "\r";
+								System.out.println("Response ----"+aResponse);
+							} else {
+								throw new Exception("Could not find MSG header");
+							}
+						} else {
+							throw new Exception("Could not find DT header");
+						}
+					} else {
+						throw new Exception("Response message is empty");
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				// *******************************************************************************
+
 				if (netSocket != null) {
 					socketInput.close();
 					socketOutput.close();
@@ -102,6 +202,7 @@ public class HandshakeClient {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 
 	/**
@@ -195,7 +296,6 @@ public class HandshakeClient {
 			String localAddress = java.net.InetAddress.getLocalHost().toString();
 			int slash = localAddress.indexOf("/");
 			String machineName = localAddress.substring(0, slash);
-			String ip = localAddress.substring(slash + 1);
 
 			ipAddress.replace(0, 12, "SI0000000032A");
 

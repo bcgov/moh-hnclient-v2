@@ -1,19 +1,15 @@
 package ca.bc.gov.hlth.hnclientv2.handshake.server;
 
-import java.io.*;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import org.apache.camel.Consume;
-import org.apache.camel.Converter;
 import org.apache.camel.EndpointInject;
-import org.apache.camel.Handler;
-import org.apache.camel.Produce;
-import org.apache.camel.ProducerTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,31 +17,47 @@ public class HandshakeServer {
 
 	private static int XFER_HANDSHAKE_SEED = 0;
 	private static int XFER_HANDSHAKE_SIZE = 8;
-	private static String XFER_HS_SEGMENT = "HS";
 	private static String HNET_RTRN_SUCCESS = "HNET_RTRN_SUCCESS";
 	private static String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
 	private static String HNET_RTRN_INVALIDFORMATERROR = "HNET_RTRN_INVALIDFORMATERROR";
+	// data indicator
+	private static final String DATA_INDICATOR = "DT";
+	// message header indicator
+	public static final String HEADER_INDICATOR = "MSH";
+	// data indicator length
+	private static final int DATA_INDICATOR_LENGTH = 2;
+	// length indicator length
+	private static final int LENGTH_INDICATOR_LENGTH = 12;
 
 	private static byte decodeSeed = 0;
+	// DT segments to send to POS
+	private static byte dataSegmentout[] = new byte[12];
+	private static byte dataHL7out[];
+
+	private static final String TEN_ZEROS = "0000000000";
 
 	private static Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
+
+	private static String v2MsgResponse = "MSH|^~\\&|HNETDTTN|BC00002041|HNTIMEAP|BC01000161|20210203164324-0800|ANUMEHA.SRIVASTAVA|NMR||D|2.3||||\\0x0dMSA|AA|||||\\0x0dNCK|20210203164324-0800\\0x0d\\0x0d";
 
 	@EndpointInject("direct:start")
 
 	public HandshakeServer() {
-		System.out.println("Constructor is called");
+		logger.info("HandshakeServer constructor is called");
 		startServer();
 
 	}
 
 	public void startServer() {
+		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
+		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 
 		Runnable serverTask = new Runnable() {
 			@Override
 			public void run() {
 				try {
 					ServerSocket mysocket = new ServerSocket(5555);
-
+					String headerIn;
 					while (true) {
 						Socket connectionSocket = mysocket.accept();
 
@@ -53,47 +65,133 @@ public class HandshakeServer {
 								1000);
 						BufferedOutputStream socketOutput = new BufferedOutputStream(
 								connectionSocket.getOutputStream());
-						BufferedReader r = new BufferedReader(
-								new InputStreamReader(socketInput, StandardCharsets.UTF_8));
 
 						String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 
 						System.out.println("Handshake is done with the message: {}" + ret_code);
 
 						if (ret_code.contentEquals(HNET_RTRN_SUCCESS)) {
-							// socketInput.read();
 							// read SI segment
 							if (socketInput.available() > 0) {
 								byte[] message = new byte[44];
 								socketInput.read(message);
 								extractData(message);
 								logger.info("Completed reading SI Segment");
+							} else {
+								throw new Exception("Could not find SI Segment");
 							}
 
 							// read dtsegment header
-							if (socketInput.available() > 0) {
-								byte[] dtsegment = new byte[12];
-								socketInput.read(dtsegment, 0, 12);
-								extractData(dtsegment);
-								logger.info("Completed reading DT Segment");
+							byte[] dtsegment = new byte[12];
+
+							socketInput.read(dtsegment, 0, 12);
+							extractData(dtsegment);
+							if (dtsegment.length > 0) {
+								int numSocketReadTries = 0;
+								headerIn = new String(dtsegment, "UTF-8");
+
+								while (!headerIn.contains(DATA_INDICATOR)) {
+									socketInput.read(dtsegment, 0, 12);
+									headerIn = unScrambleData(dtsegment);
+
+									if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+										numSocketReadTries++;
+										//
+										// Give other packets a chance to arrive and
+										// avoid trying to monopolize CPU time..
+										//
+										java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
+									} else {
+										//
+										// Give up eventually.
+										//
+										throw new Exception("Could not find DT Response.");
+									}
+									logger.info("Completed reading DT Segment");
+								}
+
+								// }
+
+								// Look for the start of data
+								if (headerIn.contains(DATA_INDICATOR)) {
+									int messageLength = Integer.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
+
+									numSocketReadTries = 0;
+
+									while (socketInput.available() < messageLength) {
+										if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+											numSocketReadTries++;
+											//
+											// Give other packets a chance to arrive and
+											// avoid trying to monopolize CPU time..
+											//
+											java.lang.Thread.sleep(SOCKET_READ_SLEEP_TIME);
+										} else {
+											//
+											// Give up eventually.
+											//
+											throw new Exception("Could not find entire message.");
+										}
+									}
+
+									// read dtsegment data
+
+									byte[] message2 = new byte[messageLength];
+									socketInput.read(message2, 0, messageLength);
+									extractData(message2);
+									String HL7IN = new String(message2, "UTF-8");
+
+									int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
+
+									if (indexOfMSG != -1) {
+										//
+										// Read whatever is after the MSH segment.
+										String aResponse = HL7IN.substring(indexOfMSG) + "\r";
+										logger.info("HL7 message recived from POS ----" + aResponse);
+									} else {
+										throw new Exception("Could not find MSG");
+									}
+
+								} else {
+									throw new Exception("Could not find DT Header");
+								}
+							} else {
+								throw new Exception("Could not find DT segment");
 							}
 
-							//read dtsegment data
-							if (socketInput.available() > 0) {
+							// ************************************************************************
 
-								byte[] message2 = socketInput.readAllBytes();
-								extractData(message2);
-								logger.info("Completed reading DT MSG Segment");
-							}
+							// Write Response back to POS
+
+							String dtSegment = insertHeader(v2MsgResponse);
+
+							dataSegmentout = dtSegment.substring(0, 12).getBytes("UTF-8");
+
+							dataHL7out = dtSegment.substring(12).getBytes("UTF-8");
+							logger.info("dataHL7out: " + new String(dataHL7out));
+
+							// scramble each segment prior to sending it to BufferedOutputStream
+							scrambleData(dataSegmentout);
+
+							socketOutput.write(dataSegmentout);
+
+							scrambleData(dataHL7out);
+							socketOutput.write(dataHL7out);
+							socketOutput.flush();
+
+							// sent Response to POS
+
+							// ************************************************************************************
+
+							System.out.println("HL7 transaction is done");
+							logger.debug("HL7 transaction is done: {}", ret_code);
 
 						}
-						System.out.println("HL7 transaction is done");
-						logger.debug("HL7 transaction is done: {}", ret_code);
-
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+
 			}
 
 			private void extractData(byte[] dtsegment) throws UnsupportedEncodingException {
@@ -111,8 +209,6 @@ public class HandshakeServer {
 		serverThread.start();
 
 	}
-
-
 
 	/*----------------------------------------------------------------------------
 	 *This function computes the original handshake challenge data for the 
@@ -164,19 +260,31 @@ public class HandshakeServer {
 			retCode = recvVerifyHandshakeData(ios, handshakeData, clientHandshakeData);
 
 		if (retCode.equals(HNET_RTRN_SUCCESS))
-			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE-1];
+			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE - 1];
 		else
-			System.out.println("Error recieveing handshakedata");
+			logger.info("Error recieveing handshakedata");
 
 		return retCode;
 	}
 
+	/**
+	 * Receives the handshake segment from the originator and verifies it for
+	 * correctness.
+	 * 
+	 * @param ios                 the input stream
+	 * @param handShakeData       the original handshake data
+	 * @param clientHandshakeData the client handshake data
+	 * @return HNET_RTRN_SUCCESS /HNET_RTRN_INVALIDPARAMETER /
+	 *         HNET_RTRN_INVALIDFORMATERROR
+	 * @throws IOException          the io exception
+	 * @throws InterruptedException the interrupted exception
+	 */
 	protected static String recvVerifyHandshakeData(BufferedInputStream ios, byte[] handShakeData,
 			byte[] clientHandshakeData) throws IOException, InterruptedException {
 
 		String funcName = "RecvVerifyHandshakeData";
 		String retCode = HNET_RTRN_SUCCESS;
-		System.out.println("inside recvVerifyHandshakeData");
+		logger.info("Executing recvVerifyHandshakeData method");
 
 		/*
 		 * Check parameters.
@@ -200,7 +308,7 @@ public class HandshakeServer {
 		/*
 		 * First get the originator handshake segment header and data.
 		 */
-		if (retCode == HNET_RTRN_SUCCESS) {
+		if (retCode.equals(HNET_RTRN_SUCCESS)) {
 
 			byte[] clientHandshakesegment = new byte[12];
 
@@ -215,23 +323,22 @@ public class HandshakeServer {
 			// read and verify the handshake data
 			ios.read(clientHandshakeData, 0, 8);
 			retCode = verifyHandshakeResponse(clientHandshakeData, handShakeData, XFER_HANDSHAKE_SIZE);
-			//decodeSeed = handShakeData[7];
 		}
 		return retCode;
 	}
 
 	/**
-	 * @param clientHandshakeData
-	 * @param originalHandshakeData
-	 * @param XFER_HANDSHAKE_SIZE
-	 * @return Suucess/ Failure message
+	 * @param clientHandshakeData   the client handshake data
+	 * @param originalHandshakeData the original server handshake data
+	 * @param XFER_HANDSHAKE_SIZE   the handshake data size
+	 * @return Success/ Failure message
 	 */
 	public static String verifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData,
 			int XFER_HANDSHAKE_SIZE) {
 		String retCode = HNET_RTRN_SUCCESS;
 
 		// Scramble the original handshake data
-		scrambleData(originalHandshakeData, XFER_HANDSHAKE_SIZE, XFER_HANDSHAKE_SEED, XFER_HS_SEGMENT);
+		scrambleData(originalHandshakeData);
 
 		// Compare client handshake data and original handshake data
 		if (!compareByteArray(clientHandshakeData, originalHandshakeData)) {
@@ -259,38 +366,18 @@ public class HandshakeServer {
 	/**
 	 * Takes a data buffer and scramble the contents using a simple algorithm
 	 * 
-	 * @param dataBuffer   The buffer the contents of which are to be scrambled. May
-	 *                     not be NULL.
-	 * @param scrambleLen  The number of bytes in the dataBuffer parameter which are
-	 *                     to be scrambled. Must be <= the actual size of
-	 *                     dataBuffer.
-	 *
-	 * @param scrambleSeed The seed value used to start the scrambling process.
-	 * @param segmentType  What type of HL7XFER segment data is in dataBuffer. Must
-	 *                     be one of of the XFER_XX_SEGMENT values.
-	 * @param traceBuffer  The buffer to place diagnostic and tracing information.
+	 * @param aByte      The buffer the contents of which are to be scrambled. May
+	 * @param decodeSeed The seed value used to start the scrambling process.
+	 * @return scrambled data
 	 */
 
-	public static String scrambleData(byte[] dataBuffer, int scrambleLen, int scrambleSeed, String segmentType) {
-
-		String retCode = HNET_RTRN_SUCCESS;
-
-		/* Check the parameters for correctness. */
-		if (dataBuffer == null) {
-			return retCode = HNET_RTRN_INVALIDPARAMETER;
+	public static byte[] scrambleData(byte[] aByte) {
+		aByte[0] ^= decodeSeed;
+		for (int x = 1; x < aByte.length; x++) {
+			aByte[x] ^= aByte[x - 1];
 		}
 
-		/*
-		 * Now scramble the data using a simple algorithm
-		 */
-
-		if (retCode == HNET_RTRN_SUCCESS) {
-			dataBuffer[0] ^= scrambleSeed;
-			for (int i = 1; i < scrambleLen; i++)
-				dataBuffer[i] ^= dataBuffer[i - 1];
-		}
-
-		return retCode;
+		return aByte;
 	}
 
 	/**
@@ -301,22 +388,9 @@ public class HandshakeServer {
 	 * decode seed is derived from the random set of 8 bytes (it is also used in
 	 * data scrambling)
 	 *
-	 * @param scrambleByte byte[]
-	 * @return
+	 * @param scrambleByte byte[] the byte array to be unscrambled
+	 * @return scrambled string.
 	 */
-	public String unScrambleData1(byte[] scrambleByte, int unscrambleLen, byte unscrambleSeed, String segmentType) {
-		if (scrambleByte == null)
-			return HNET_RTRN_INVALIDPARAMETER;
-
-		byte prevByte = scrambleByte[0];
-		scrambleByte[0] ^= unscrambleSeed;
-		for (int x = 1; x < scrambleByte.length; x++) {
-			byte currByte = scrambleByte[x];
-			scrambleByte[x] ^= prevByte;
-			prevByte = currByte;
-		}
-		return new String(scrambleByte);
-	}
 
 	public String unScrambleData(byte[] scrambleByte) {
 
@@ -330,6 +404,11 @@ public class HandshakeServer {
 		return new String(scrambleByte);
 	}
 
+	/**
+	 * @param clietData    the byte array received from pos
+	 * @param originalData the original byte array
+	 * @return client data and original data are equal or not.
+	 */
 	public static boolean compareByteArray(byte[] clietData, byte[] originalData) {
 		if (clietData == originalData)
 			return true;
@@ -347,19 +426,11 @@ public class HandshakeServer {
 		return true;
 	}
 
-	private static byte[] readStream(InputStream is) throws Exception {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] buff = new byte[1024];
-		int len = is.read(buff);
-		while (len > 0) {
-			baos.write(buff, 0, len);
-			if (len == buff.length) {
-				len = is.read(buff);
-			} else {
-				len = 0;
-			}
-		}
-		return baos.toByteArray();
+	protected String insertHeader(String aMessage) {
+		String lengthOfMessage = String.valueOf(aMessage.length());
+		aMessage = "DT" + TEN_ZEROS.substring(0, TEN_ZEROS.length() - lengthOfMessage.length()) + lengthOfMessage
+				+ aMessage;
+		return aMessage;
 	}
 
 }
