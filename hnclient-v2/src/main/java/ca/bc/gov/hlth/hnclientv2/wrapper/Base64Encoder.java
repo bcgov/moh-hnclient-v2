@@ -32,7 +32,6 @@ public class Base64Encoder {
 
     }
 
-
     /**
      * @param v2Message the v2 message
      * @return message in base64 format

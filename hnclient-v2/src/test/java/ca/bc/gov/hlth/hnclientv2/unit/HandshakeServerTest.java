@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import ca.bc.gov.hlth.hnclientv2.handshake.client.HandshakeClient;
 import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
 
 public class HandshakeServerTest {
@@ -52,10 +51,9 @@ public class HandshakeServerTest {
 		clientHandshakeData = handShakeData;
 
 		HandshakeServer.scrambleData(handShakeData);
-		HandshakeClient.scrambleData(clientHandshakeData);
+		HandshakeServer.scrambleData(clientHandshakeData);
 
-		String ret_code = HandshakeServer.verifyHandshakeResponse(clientHandshakeData, handShakeData,
-				XFER_HANDSHAKE_SEED);
+		String ret_code = HandshakeServer.verifyHandshakeResponse(clientHandshakeData, handShakeData);
 		assertTrue(ret_code.equals(HNET_RTRN_SUCCESS));
 	}
 
@@ -67,10 +65,9 @@ public class HandshakeServerTest {
 		HandshakeServer.generateHandshakeData(handShakeData);
 
 		HandshakeServer.scrambleData(handShakeData);
-		HandshakeClient.scrambleData(clientHandshakeData);
+		HandshakeServer.scrambleData(clientHandshakeData);
 
-		String ret_code = HandshakeServer.verifyHandshakeResponse(clientHandshakeData, handShakeData,
-				XFER_HANDSHAKE_SEED);
+		String ret_code = HandshakeServer.verifyHandshakeResponse(clientHandshakeData, handShakeData);
 		assertTrue(ret_code.equals(HNET_RTRN_INVALIDFORMATERROR));
 	}
 
