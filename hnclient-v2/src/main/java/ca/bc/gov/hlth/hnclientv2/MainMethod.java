@@ -7,11 +7,10 @@ import org.apache.camel.main.Main;
  */
 public class MainMethod {
 
-    public static void main(String... args) throws Exception {
-        Main main = new Main();
-        main.configure().addRoutesBuilder(new Route());
-        main.run(args);
-    }
+	public static void main(String... args) throws Exception {
+		Main main = new Main();
+		main.configure().addRoutesBuilder(new Route());
+		main.run(args);
+	}
 
 }
-
