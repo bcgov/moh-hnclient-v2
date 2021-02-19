@@ -9,25 +9,25 @@ public class POSSendMessage {
 
 	private static Socket netSocket = null;
 
-	private static byte decodeSeed = 0;
+	private  byte decodeSeed = 0;
 
 	// HandShake Segment
-	private static byte handShakeSegment[] = new byte[12];
-	private static byte handShakeData[] = new byte[8];
+	private  byte handShakeSegment[] = new byte[12];
+	private  byte handShakeData[] = new byte[8];
 
 	// define ten cute little 0's contained in the hnclient's heart beat.
 	private static final String TEN_ZEROS = "0000000000";
 
 	// DT segments received from HNClient
-	private static byte dataSegmentin[] = new byte[12];
-	private static byte dataHL7in[];
+	private  byte dataSegmentin[] = new byte[12];
+	private  byte dataHL7in[];
 
 	// DT segments to send to HNClient
-	private static byte dataSegmentout[] = new byte[12];
-	private static byte dataHL7out[];
+	private  byte dataSegmentout[] = new byte[12];
+	private  byte dataHL7out[];
 
 	// Station Idetification Segment
-	private static StringBuffer ipAddress = new StringBuffer("                                            "); // 44 spaces
+	private  StringBuffer ipAddress = new StringBuffer("                                            "); // 44 spaces
 
 	// data indicator
 	private static final String DATA_INDICATOR = "DT";
@@ -40,8 +40,15 @@ public class POSSendMessage {
 
 	private static String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
 			+ "ZHD|20170125122125|^^00000010|HNAIADMINISTRATION||||2.4\n" + "PID||1234567890^^^BC^PH";
-
+	
+	
 	public static void main(String args[]) {
+		POSSendMessage obj = new POSSendMessage();
+		obj.send();
+	}
+
+	private void send() {
+		
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 		int numSocketReadTries = 0;
@@ -74,7 +81,7 @@ public class POSSendMessage {
 
 				// write 12 bytes of HS response to BufferedOutputStream
 				socketOutput.write("HS0000000008".getBytes(), 0, 12);
-				System.out.println("Wrote HSSegment to listener");
+				System.out.println("Wrotee HSSegment to listener");
 
 				// write 8 bytes of scrambled HandShake data to BufferedOutputStream
 				socketOutput.write(scrambleData(handShakeData), 0, 8);
@@ -204,7 +211,7 @@ public class POSSendMessage {
 	 * @param aByte array of byte
 	 * @return array of byte
 	 */
-	public static byte[] scrambleData(byte[] aByte) {
+	public  byte[] scrambleData(byte[] aByte) {
 		aByte[0] ^= decodeSeed;
 		for (int x = 1; x < aByte.length; x++) {
 			aByte[x] ^= aByte[x - 1];
@@ -244,7 +251,7 @@ public class POSSendMessage {
 	 * @param scrambleByte byte[]
 	 * @return
 	 */
-	public static String unScrambleData(byte[] scrambleByte) {
+	public String unScrambleData(byte[] scrambleByte) {
 
 		byte prevByte = scrambleByte[0];
 		scrambleByte[0] ^= decodeSeed;
@@ -280,7 +287,7 @@ public class POSSendMessage {
 	 * @return byte[]
 	 * @throws java.net.UnknownHostException
 	 */
-	private static String getHostName() throws UnknownHostException {
+	private  String getHostName() throws UnknownHostException {
 		try {
 
 			String localAddress = java.net.InetAddress.getLocalHost().toString();
