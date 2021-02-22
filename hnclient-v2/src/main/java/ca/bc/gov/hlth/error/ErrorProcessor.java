@@ -1,8 +1,6 @@
 package ca.bc.gov.hlth.error;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.camel.Exchange;
