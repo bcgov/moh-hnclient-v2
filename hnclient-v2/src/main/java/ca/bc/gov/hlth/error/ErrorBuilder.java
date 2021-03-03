@@ -36,24 +36,28 @@ public class ErrorBuilder {
 	}
 
 	public static String buildDefaultErrorMessage(String errMsg) {
-		return buildMSH(HL7Error_Default) +buildMSA(errMsg) ;
+		return buildMSH(HL7Error_Default) + buildMSA(errMsg) ;
 	}
 	
 	
 	private static String buildMSA(String errMsg) {
-		return msa+timestamp+"|"+errMsg+seperator3;
+		return msa+timestamp + "|" + errMsg + seperator3;
 	}
 
 	
 
 	public static String buildMSH(String msh) {
 		String parsedMessage;
+		
 		if (!StringUtil.isNullOrEmpty(msh)) {
 			parsedMessage = msh;
 		} else
 			parsedMessage = HL7Error_Default;
+		
 		String[] arr = parsedMessage.split("\\|");
+		
 		String sendingApp = "HNCLIENT";
+		
 		if (arr[3] != null) {
 			sendingFacility = arr[3];
 		} else {
@@ -64,11 +68,17 @@ public class ErrorBuilder {
 			recievingFacility = arr[5];
 		} else {
 			recievingFacility = "UNKNOWN";
+		}		
+		
+		String usrId = ""; 
+		if(arr.length > 6 && arr[7] != null) {
+			usrId = arr[7];	
 		}
+			
 
 		String msh1 = arr[0] + "|" + arr[1] + "|" + recievingApp + "|" + recievingFacility + "|" + sendingApp + "|"
-				+sendingFacility+"|"+ack+seperator3+processingDomain+"|"+version;
-		System.out.println(msh1);
+				+sendingFacility+"|"+usrId+"|"+ack+seperator3+processingDomain+"|"+version;
+	
 		return msh1;
 
 	}

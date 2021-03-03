@@ -44,7 +44,7 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 				String obj = (String) exchange.getIn().getBody();
 				String[] arr = obj.split("\\|");
 
-				return (arr[13].equals(expectedErrorMsg));
+				return (arr[14].equals(expectedErrorMsg));
 			}
 		});
 
