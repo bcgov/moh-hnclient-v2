@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.bc.gov.hlth.error.ErrorBuilder;
+import ca.bc.gov.hlth.hnclientv2.MessageUtil;
 import ca.bc.gov.hlth.hnclientv2.Util;
 import io.netty.util.internal.StringUtil;
 
@@ -22,13 +23,6 @@ public class HandshakeServer {
 
 	private static final int XFER_HANDSHAKE_SEED = 0;
 	private static final int XFER_HANDSHAKE_SIZE = 8;
-	private static final String HNET_RTRN_SUCCESS = "HNET_RTRN_SUCCESS";
-	private static final String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
-	private static final String HNET_RTRN_INVALIDFORMATERROR = "HNET_RTRN_INVALIDFORMATERROR";
-	private static final String HL7Error_Msg_MSHSegmentMissing = "The MSH Segment from the HL7 Message is missing.";
-	private static final String HL7Error_Msg_ErrorDTHeaderToHNClient = "Unable to send the DT Header to HNCLIENT.";
-	private static final String HL7Error_Msg_NoInputHL7 = "No HL7 Message was supplied as input";
-	private static final String HL7Error_Msg_ServerUnavailable = "Protocol error: received an unexpected data segment from HL7Xfer Server.";
 
 	// data indicator
 	private static final String DATA_INDICATOR = "DT";
@@ -83,7 +77,7 @@ public class HandshakeServer {
 
 						String hnSecureResponse = "";
 
-						if (ret_code.contentEquals(HNET_RTRN_SUCCESS)) {
+						if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
 							// read SI segment
 							if (socketInput.available() > 0) {
 								byte[] message = new byte[44];
@@ -92,7 +86,7 @@ public class HandshakeServer {
 								logger.info("Completed reading SI Segment");
 							} else {
 								logger.debug("Could not find SI Segment");
-								ret_code = HNET_RTRN_INVALIDFORMATERROR;
+								ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 							}
 
 							// read dtsegment header
@@ -115,9 +109,9 @@ public class HandshakeServer {
 								} else {
 									// Give up eventually.
 									logger.debug("Could not find DT Response.");
-									ret_code = HNET_RTRN_INVALIDFORMATERROR;
+									ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 									hnSecureResponse = ErrorBuilder
-											.buildDefaultErrorMessage(HL7Error_Msg_ErrorDTHeaderToHNClient);
+											.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
 								}
 								logger.info("Completed reading DT Segment");
 							}
@@ -138,9 +132,9 @@ public class HandshakeServer {
 									} else {
 										// Give up eventually.
 										logger.debug("Could not find entire message.");
-										ret_code = HNET_RTRN_INVALIDFORMATERROR;
+										ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 										hnSecureResponse = ErrorBuilder
-												.buildDefaultErrorMessage(HL7Error_Msg_NoInputHL7);
+												.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_NoInputHL7);
 
 									}
 								}
@@ -162,25 +156,25 @@ public class HandshakeServer {
 									} catch (Exception e) {
 										logger.debug("Failed to send request to remote server");
 										hnSecureResponse = ErrorBuilder
-												.buildHTTPErrorMessage(HL7Error_Msg_ServerUnavailable, null);
+												.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
 									}
 
 								} else {
-									logger.debug(HL7Error_Msg_MSHSegmentMissing);
+									logger.debug(MessageUtil.HL7Error_Msg_MSHSegmentMissing);
 									hnSecureResponse = ErrorBuilder
-											.buildHTTPErrorMessage(HL7Error_Msg_MSHSegmentMissing, null);
+											.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_MSHSegmentMissing, null);
 								}
 
 							} else {
-								logger.debug(HL7Error_Msg_ErrorDTHeaderToHNClient);
+								logger.debug(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
 								hnSecureResponse = ErrorBuilder
-										.buildDefaultErrorMessage(HL7Error_Msg_ErrorDTHeaderToHNClient);
+										.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
 							}
 
 							// Write Response back to POS
 							if (StringUtil.isNullOrEmpty(hnSecureResponse)) {
 								hnSecureResponse = ErrorBuilder
-										.buildDefaultErrorMessage(HL7Error_Msg_ServerUnavailable);
+										.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable);
 							}
 							String dtSegment = insertHeader(hnSecureResponse);
 
@@ -247,19 +241,19 @@ public class HandshakeServer {
 		byte[] clientHandshakeData = new byte[XFER_HANDSHAKE_SIZE];
 
 		if (handshakeSeed == null) {
-			return HNET_RTRN_INVALIDPARAMETER;
+			return MessageUtil.HNET_RTRN_INVALIDPARAMETER;
 		}
 		/* Create the initial handshake data. **/
 		String retCode = generateHandshakeData(handshakeData);
 
 		/* Now send the Handshake Segment Header. */
-		if (retCode.equals(HNET_RTRN_SUCCESS)) {
+		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {
 			bos.write("HS0000000008".getBytes(), 0, 12);
 			bos.flush();
 		}
 
 		/* Now send the actual handshake data */
-		if (retCode.equals(HNET_RTRN_SUCCESS)) {
+		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {
 			bos.write(handshakeData);
 			bos.flush();
 
@@ -270,10 +264,10 @@ public class HandshakeServer {
 		 * Now receive and verify the originator's response to the handshake data. This
 		 * must be the first segment which the originator sends.
 		 */
-		if (retCode.equals(HNET_RTRN_SUCCESS))
+		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS))
 			retCode = recvVerifyHandshakeData(ios, handshakeData, clientHandshakeData);
 
-		if (retCode.equals(HNET_RTRN_SUCCESS))
+		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS))
 			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE - 1];
 
 		logger.info("Error recieveing handshakedata");
@@ -285,8 +279,8 @@ public class HandshakeServer {
 	 * Receives the handshake segment from the originator and verifies it for
 	 * correctness.
 	 * 
-	 * @param ios the input stream
-	 * @param handShakeData the original handshake data
+	 * @param ios                 the input stream
+	 * @param handShakeData       the original handshake data
 	 * @param clientHandshakeData the client handshake data
 	 * @return HNET_RTRN_SUCCESS /HNET_RTRN_INVALIDPARAMETER /
 	 *         HNET_RTRN_INVALIDFORMATERROR
@@ -302,12 +296,12 @@ public class HandshakeServer {
 		// Check parameters.
 		if (handShakeData == null) {
 			logger.debug("Origninal HandshakeData parameter cannot be NULL");
-			retCode = HNET_RTRN_INVALIDPARAMETER;
+			retCode = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
 			return retCode;
 
 		} else if (clientHandshakeData == null) {
 			logger.debug("ClientHandshakeData parameter cannot be NULL" + funcName + "HNET_RTRN_INVALIDPARAMETER");
-			retCode = HNET_RTRN_INVALIDPARAMETER;
+			retCode =MessageUtil.HNET_RTRN_INVALIDPARAMETER;
 
 			return retCode;
 		} else {
@@ -334,7 +328,7 @@ public class HandshakeServer {
 	 * @return Success/ Failure message
 	 */
 	public String verifyHandshakeResponse(byte[] clientHandshakeData, byte[] originalHandshakeData) {
-		String retCode = HNET_RTRN_SUCCESS;
+		String retCode = MessageUtil.HNET_RTRN_SUCCESS;
 
 		// Scramble the original handshake data
 		util.scrambleData(originalHandshakeData, decodeSeed);
@@ -342,7 +336,7 @@ public class HandshakeServer {
 		// Compare client handshake data and original handshake data
 		if (!util.compareByteArray(clientHandshakeData, originalHandshakeData)) {
 			logger.debug("Received handshake data does not match expected data");
-			retCode = HNET_RTRN_INVALIDFORMATERROR;
+			retCode = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 		} else {
 			logger.debug("Received handshake data matched expected data");
 		}
@@ -350,9 +344,9 @@ public class HandshakeServer {
 	}
 
 	public static String generateHandshakeData(byte[] handShakeData) {
-		String ret_code = HNET_RTRN_SUCCESS;
+		String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 		if (handShakeData == null)
-			ret_code = HNET_RTRN_INVALIDPARAMETER;
+			ret_code = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
 		else {
 			// create random object
 			Random r = new Random(System.currentTimeMillis());

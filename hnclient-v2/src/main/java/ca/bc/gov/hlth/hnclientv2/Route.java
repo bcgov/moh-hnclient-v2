@@ -79,10 +79,13 @@ public class Route extends RouteBuilder {
         // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
         renewKeys();
         
-        onException(org.apache.http.conn.HttpHostConnectException.class).process(new FailureProcessor())
+        onException(org.apache.http.conn.HttpHostConnectException.class).process(new FailureProcessor(MessageUtil.SERVER_NO_CONNECTION))
         .log("Recieved body ${body}").handled(true);
         
-        onException(IllegalArgumentException.class).process(new FailureProcessor())
+        onException(CamelCustomException.class).process(new FailureProcessor(MessageUtil.UNKNOWN_EXCEPTION))
+        .log("Recieved body ${body}").handled(true);
+        
+        onException(IllegalArgumentException.class).process(new FailureProcessor(MessageUtil.INVALID_PARAMETER))
         .log("Recieved body ${body}").handled(true);
 
         
