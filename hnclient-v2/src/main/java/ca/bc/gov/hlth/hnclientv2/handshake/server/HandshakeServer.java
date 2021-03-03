@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.Scanner;
@@ -13,7 +14,9 @@ import org.apache.camel.ProducerTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.bc.gov.hlth.error.CamelCustomException;
+import ca.bc.gov.hlth.error.ErrorBuilder;
+import ca.bc.gov.hlth.hnclientv2.Util;
+import io.netty.util.internal.StringUtil;
 
 public class HandshakeServer {
 
@@ -22,6 +25,11 @@ public class HandshakeServer {
 	private static final String HNET_RTRN_SUCCESS = "HNET_RTRN_SUCCESS";
 	private static final String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
 	private static final String HNET_RTRN_INVALIDFORMATERROR = "HNET_RTRN_INVALIDFORMATERROR";
+	private static final String HL7Error_Msg_MSHSegmentMissing = "The MSH Segment from the HL7 Message is missing.";
+	private static final String HL7Error_Msg_ErrorDTHeaderToHNClient = "Unable to send the DT Header to HNCLIENT.";
+	private static final String HL7Error_Msg_NoInputHL7 = "No HL7 Message was supplied as input";
+	private static final String HL7Error_Msg_ServerUnavailable = "Protocol error: received an unexpected data segment from HL7Xfer Server.";
+
 	// data indicator
 	private static final String DATA_INDICATOR = "DT";
 	// message header indicator
@@ -42,13 +50,14 @@ public class HandshakeServer {
 
 	private final ProducerTemplate producer;
 
+	private static final Util util = new Util();
+
 	public HandshakeServer(ProducerTemplate producer) {
 		logger.debug("HandshakeServer constructor is called");
 		this.producer = producer;
 		startServer();
+
 	}
-	
-	
 
 	public void startServer() {
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
@@ -82,7 +91,8 @@ public class HandshakeServer {
 								extractData(message);
 								logger.info("Completed reading SI Segment");
 							} else {
-								throw new Exception("Could not find SI Segment");
+								logger.debug("Could not find SI Segment");
+								ret_code = HNET_RTRN_INVALIDFORMATERROR;
 							}
 
 							// read dtsegment header
@@ -95,7 +105,7 @@ public class HandshakeServer {
 
 							while (!headerIn.contains(DATA_INDICATOR)) {
 								socketInput.read(dtsegment, 0, 12);
-								headerIn = unScrambleData(dtsegment);
+								headerIn = util.unScrambleData(dtsegment, decodeSeed);
 
 								if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
 									numSocketReadTries++;
@@ -104,7 +114,10 @@ public class HandshakeServer {
 									Thread.sleep(SOCKET_READ_SLEEP_TIME);
 								} else {
 									// Give up eventually.
-									throw new Exception("Could not find DT Response.");
+									logger.debug("Could not find DT Response.");
+									ret_code = HNET_RTRN_INVALIDFORMATERROR;
+									hnSecureResponse = ErrorBuilder
+											.buildDefaultErrorMessage(HL7Error_Msg_ErrorDTHeaderToHNClient);
 								}
 								logger.info("Completed reading DT Segment");
 							}
@@ -124,7 +137,11 @@ public class HandshakeServer {
 										Thread.sleep(SOCKET_READ_SLEEP_TIME);
 									} else {
 										// Give up eventually.
-										throw new CamelCustomException("Could not find entire message.");
+										logger.debug("Could not find entire message.");
+										ret_code = HNET_RTRN_INVALIDFORMATERROR;
+										hnSecureResponse = ErrorBuilder
+												.buildDefaultErrorMessage(HL7Error_Msg_NoInputHL7);
+
 									}
 								}
 
@@ -139,19 +156,32 @@ public class HandshakeServer {
 								if (indexOfMSG != -1) {
 									// Read whatever is after the MSH segment.
 									String aResponse = HL7IN.substring(indexOfMSG) + "\r";
-									logger.info("HL7 message recived from POS ----" + aResponse);
-
-									hnSecureResponse = (String) producer.requestBody(aResponse);
+									logger.info("HL7 message recived from POS: " + aResponse);
+									try {
+										hnSecureResponse = (String) producer.requestBody(aResponse);
+									} catch (Exception e) {
+										logger.debug("Failed to send request to remote server");
+										hnSecureResponse = ErrorBuilder
+												.buildHTTPErrorMessage(HL7Error_Msg_ServerUnavailable, null);
+									}
 
 								} else {
-									throw new CamelCustomException("Could not find MSH");
+									logger.debug(HL7Error_Msg_MSHSegmentMissing);
+									hnSecureResponse = ErrorBuilder
+											.buildHTTPErrorMessage(HL7Error_Msg_MSHSegmentMissing, null);
 								}
 
 							} else {
-								throw new CamelCustomException("Could not find DT Header");
+								logger.debug(HL7Error_Msg_ErrorDTHeaderToHNClient);
+								hnSecureResponse = ErrorBuilder
+										.buildDefaultErrorMessage(HL7Error_Msg_ErrorDTHeaderToHNClient);
 							}
 
 							// Write Response back to POS
+							if (StringUtil.isNullOrEmpty(hnSecureResponse)) {
+								hnSecureResponse = ErrorBuilder
+										.buildDefaultErrorMessage(HL7Error_Msg_ServerUnavailable);
+							}
 							String dtSegment = insertHeader(hnSecureResponse);
 
 							dataSegmentout = dtSegment.substring(0, 12).getBytes(StandardCharsets.UTF_8);
@@ -160,31 +190,38 @@ public class HandshakeServer {
 							logger.info("dataHL7out: " + new String(dataHL7out));
 
 							// scramble each segment prior to sending it to BufferedOutputStream
-							scrambleData(dataSegmentout);
+							util.scrambleData(dataSegmentout, decodeSeed);
 							socketOutput.write(dataSegmentout);
 
-							scrambleData(dataHL7out);
+							util.scrambleData(dataHL7out, decodeSeed);
 							socketOutput.write(dataHL7out);
 							socketOutput.flush();
 
 							// sent Response to POS
 							logger.info("HL7 transaction is done: {}", ret_code);
-						}
+
+						} else
+
+							logger.info("HL7 transaction is done: {}", ret_code);
 						// reset decodeseed
 						decodeSeed = 0;
 					}
+				} catch (SocketException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 
 			private void extractData(byte[] dtsegment) {
-				unScrambleData(dtsegment);
+				util.unScrambleData(dtsegment, decodeSeed);
 
 				String output1 = new String(dtsegment, StandardCharsets.UTF_8);
 				Scanner s1 = new Scanner(output1);
 				while (s1.hasNextLine()) {
-					System.out.println(s1.nextLine());
+					logger.info(s1.nextLine());
 				}
 				s1.close();
 			}
@@ -238,8 +275,8 @@ public class HandshakeServer {
 
 		if (retCode.equals(HNET_RTRN_SUCCESS))
 			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE - 1];
-		else
-			logger.info("Error recieveing handshakedata");
+
+		logger.info("Error recieveing handshakedata");
 
 		return retCode;
 	}
@@ -248,8 +285,8 @@ public class HandshakeServer {
 	 * Receives the handshake segment from the originator and verifies it for
 	 * correctness.
 	 * 
-	 * @param ios                 the input stream
-	 * @param handShakeData       the original handshake data
+	 * @param ios the input stream
+	 * @param handShakeData the original handshake data
 	 * @param clientHandshakeData the client handshake data
 	 * @return HNET_RTRN_SUCCESS /HNET_RTRN_INVALIDPARAMETER /
 	 *         HNET_RTRN_INVALIDFORMATERROR
@@ -264,13 +301,11 @@ public class HandshakeServer {
 
 		// Check parameters.
 		if (handShakeData == null) {
-			System.out.println("Origninal HandshakeData parameter cannot be NUL");
 			logger.debug("Origninal HandshakeData parameter cannot be NULL");
 			retCode = HNET_RTRN_INVALIDPARAMETER;
 			return retCode;
 
 		} else if (clientHandshakeData == null) {
-			System.out.println("client HandshakeData parameter cannot be NUL");
 			logger.debug("ClientHandshakeData parameter cannot be NULL" + funcName + "HNET_RTRN_INVALIDPARAMETER");
 			retCode = HNET_RTRN_INVALIDPARAMETER;
 
@@ -281,7 +316,7 @@ public class HandshakeServer {
 			// read and verify the handshake header
 			ios.read(clientHandshakesegment, 0, 12);
 
-			if (!compareByteArray(clientHandshakesegment, "HS0000000008".getBytes())) {
+			if (!util.compareByteArray(clientHandshakesegment, "HS0000000008".getBytes())) {
 				logger.debug("Handshake header segment are not matched");
 				return "HNET_RTRN_INVALIDFORMATERROR";
 			}
@@ -302,10 +337,10 @@ public class HandshakeServer {
 		String retCode = HNET_RTRN_SUCCESS;
 
 		// Scramble the original handshake data
-		scrambleData(originalHandshakeData);
+		util.scrambleData(originalHandshakeData, decodeSeed);
 
 		// Compare client handshake data and original handshake data
-		if (!compareByteArray(clientHandshakeData, originalHandshakeData)) {
+		if (!util.compareByteArray(clientHandshakeData, originalHandshakeData)) {
 			logger.debug("Received handshake data does not match expected data");
 			retCode = HNET_RTRN_INVALIDFORMATERROR;
 		} else {
@@ -325,69 +360,6 @@ public class HandshakeServer {
 			r.nextBytes(handShakeData);
 		}
 		return ret_code;
-	}
-
-	/**
-	 * Takes a data buffer and scramble the contents using a simple algorithm
-	 * 
-	 * @param aByte The buffer the contents of which are to be scrambled. May
-	 */
-
-	public void scrambleData(byte[] aByte) {
-		aByte[0] ^= decodeSeed;
-		for (int x = 1; x < aByte.length; x++) {
-			aByte[x] ^= aByte[x - 1];
-		}
-	}
-
-	/**
-	 * <p>
-	 * The new HNClient 4.1.d sends data in a scrambled form after the initial
-	 * HandShaking data (12 bytes), and random 8 bytes (total 20 bytes) are sent
-	 * This method unscrambles the data using exclusive OR and a decode seed The
-	 * decode seed is derived from the random set of 8 bytes (it is also used in
-	 * data scrambling)
-	 *
-	 * @param scrambleByte byte[] the byte array to be unscrambled
-	 * @return scrambled string.
-	 */
-
-	public String unScrambleData(byte[] scrambleByte) {
-
-		byte prevByte = scrambleByte[0];
-		scrambleByte[0] ^= decodeSeed;
-		for (int x = 1; x < scrambleByte.length; ++x) {
-			byte currByte = scrambleByte[x];
-			scrambleByte[x] ^= prevByte;
-			prevByte = currByte;
-		}
-		return new String(scrambleByte);
-	}
-
-	/**
-	 * @param clientData   the byte array received from pos
-	 * @param originalData the original byte array
-	 * @return client data and original data are equal or not.
-	 */
-	public boolean compareByteArray(byte[] clientData, byte[] originalData) {
-		if (clientData == originalData) {
-			return true;
-		}
-
-		if (clientData == null || originalData == null) {
-			return false;
-		}
-
-		int length = clientData.length;
-		if (originalData.length != length) {
-			return false;
-		}
-		for (int i = 0; i < length; i++) {
-			if (clientData[i] != originalData[i]) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	protected String insertHeader(String aMessage) {

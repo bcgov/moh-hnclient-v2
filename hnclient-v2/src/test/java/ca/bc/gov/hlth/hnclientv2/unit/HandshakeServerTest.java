@@ -13,6 +13,7 @@ public class HandshakeServerTest {
 
 	private static String HNET_RTRN_SUCCESS = "HNET_RTRN_SUCCESS";
 	private static String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
+	private static final Util util = new Util();
 
 	@Test
 	public void test_generateHandshakeData_returns_success() {
@@ -31,7 +32,7 @@ public class HandshakeServerTest {
 	@Test
 	public void test_scrambleData_returns_success() {
 		byte[] handShakeData = new byte[8];
-		Util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
+		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
 		assertNotNull(handShakeData);
 	}
 
@@ -39,7 +40,7 @@ public class HandshakeServerTest {
 	public void test_scrambleData_returns_exception() {
 		byte[] handShakeData = null;
 
-		Util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
+		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
 	}
 
 	@Test
@@ -50,10 +51,10 @@ public class HandshakeServerTest {
 		HandshakeServer.generateHandshakeData(handShakeData);
 		clientHandshakeData = "clientdata".getBytes();
 
-		Util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
-		Util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
+		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
+		util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
 
-		assertTrue(!Util.compareByteArray(clientHandshakeData, handShakeData));
+		assertTrue(!util.compareByteArray(clientHandshakeData, handShakeData));
 	}
 
 	@Test
@@ -64,9 +65,9 @@ public class HandshakeServerTest {
 		HandshakeServer.generateHandshakeData(handShakeData);
 		clientHandshakeData = handShakeData;
 
-		Util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
+		util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
 
-		assertTrue(Util.compareByteArray(clientHandshakeData, handShakeData));
+		assertTrue(util.compareByteArray(clientHandshakeData, handShakeData));
 	}
 
 }

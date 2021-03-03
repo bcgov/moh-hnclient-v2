@@ -11,6 +11,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.bc.gov.hlth.error.CamelCustomException;
 import ca.bc.gov.hlth.error.ErrorProcessor;
 import ca.bc.gov.hlth.error.FailureProcessor;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
@@ -79,6 +80,9 @@ public class Route extends RouteBuilder {
         renewKeys();
         
         onException(org.apache.http.conn.HttpHostConnectException.class).process(new FailureProcessor())
+        .log("Recieved body ${body}").handled(true);
+        
+        onException(IllegalArgumentException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
 
         

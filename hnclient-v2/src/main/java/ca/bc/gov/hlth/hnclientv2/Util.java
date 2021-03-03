@@ -6,10 +6,7 @@ import java.util.Base64;
 
 import io.netty.util.internal.StringUtil;
 
-public final class Util {
-
-    private Util() {
-    }
+public  class Util {
 
 	public static void requireNonBlank(String str, String msg) {
         if (str == null || str.trim().length() == 0) {
@@ -48,10 +45,10 @@ public final class Util {
 	/**
 	 * Takes a data buffer and scramble the contents using a simple algorithm
 	 * 
-	 * @param aByte The buffer the contents of which are to be scrambled. May
+	 * @param aByte The buffer the contents of which are to be scrambled. 
 	 */
 
-	public static void scrambleData(byte[] aByte, byte decodeSeed) {
+	public void scrambleData(byte[] aByte, byte decodeSeed) {
 		aByte[0] ^= decodeSeed;
 		for (int x = 1; x < aByte.length; x++) {
 			aByte[x] ^= aByte[x - 1];
@@ -70,7 +67,7 @@ public final class Util {
 	 * @return scrambled string.
 	 */
 
-	public static String unScrambleData(byte[] scrambleByte,byte decodeSeed) {
+	public  String unScrambleData(byte[] scrambleByte,byte decodeSeed) {
 
 		byte prevByte = scrambleByte[0];
 		scrambleByte[0] ^= decodeSeed;
@@ -87,7 +84,7 @@ public final class Util {
 	 * @param originalData the original byte array
 	 * @return client data and original data are equal or not.
 	 */
-	public static boolean compareByteArray(byte[] clientData, byte[] originalData) {
+	public  boolean compareByteArray(byte[] clientData, byte[] originalData) {
 		if (clientData == originalData) {
 			return true;
 		}

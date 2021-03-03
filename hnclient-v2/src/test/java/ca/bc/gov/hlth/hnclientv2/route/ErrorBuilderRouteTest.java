@@ -44,7 +44,7 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 				String obj = (String) exchange.getIn().getBody();
 				String[] arr = obj.split("\\|");
 
-				return (arr[12].equals(expectedErrorMsg));
+				return (arr[13].equals(expectedErrorMsg));
 			}
 		});
 
@@ -58,7 +58,7 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 	@Test
 	public void testErrorBuilder_header401() throws Exception {
 
-		String expectedErrorMsg = "^^^Unidentified Type\\Error:Could not connect with the remote host";
+		String expectedErrorMsg = "Could not connect with the remote host";
 		Integer header = 401;
 		extractErrorMessage(expectedErrorMsg, header);
 
@@ -68,7 +68,7 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 	@Test
 	public void testErrorBuilder_header500() throws Exception {
 
-		String expectedErrorMsg = "^^^Unidentified Type\\Error:Error connecting to SERVER";
+		String expectedErrorMsg = "Error connecting to SERVER";
 		Integer header = 500;
 		extractErrorMessage(expectedErrorMsg, header);
 
@@ -77,7 +77,7 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 	@Test
 	public void testErrorBuilder_header402() throws Exception {
 
-		String expectedErrorMsg = "^^^Unidentified Type\\Error:Connection with remote facility timed out";
+		String expectedErrorMsg = "Connection with remote facility timed out";
 		Integer header = 402;
 		extractErrorMessage(expectedErrorMsg, header);
 
@@ -86,7 +86,7 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 	@Test
 	public void testErrorBuilder_headerNull() throws Exception {
 
-		String expectedErrorMsg = "^^^Unidentified Type\\Error:UNKNOWN";
+		String expectedErrorMsg = "An unknown error has occurred.";
 		Integer header = null;
 		extractErrorMessage(expectedErrorMsg, header);
 

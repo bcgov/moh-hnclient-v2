@@ -38,7 +38,7 @@ public class POSSendMessage {
 	// length indicator length
 	private static final int LENGTH_INDICATOR_LENGTH = 12;
 
-	private static String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
+	private static String v2Msg = "00000352|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
 			+ "ZHD|20170125122125|^^00000010|HNAIADMINISTRATION||||2.4\n" + "PID||1234567890^^^BC^PH";
 	
 	
@@ -81,7 +81,7 @@ public class POSSendMessage {
 
 				// write 12 bytes of HS response to BufferedOutputStream
 				socketOutput.write("HS0000000008".getBytes(), 0, 12);
-				System.out.println("Wrotee HSSegment to listener");
+				System.out.println("Wrote HSSegment to listener");
 
 				// write 8 bytes of scrambled HandShake data to BufferedOutputStream
 				socketOutput.write(scrambleData(handShakeData), 0, 8);

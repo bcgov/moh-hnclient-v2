@@ -18,31 +18,35 @@ public class ErrorProcessor implements Processor {
 	Map<Integer, ErrorCodes> errorCodeByErrorNumber = ErrorCodes.errorCodeByErrorNumber;
 
 	@Override
-	public void process(Exchange exchange) throws Exception {
-		Message in = exchange.getIn();
+	public void process(Exchange exchange) throws CamelCustomException {
+		try {
+			Message in = exchange.getIn();
 
-		Map<String, Object> headers = in.getHeaders();
-			
-		Integer header = (Integer) headers.get("CamelHttpResponseCode");
-		
-		Set<Integer> keySet = errorCodeByErrorNumber.keySet();
-		logger.info("Recieved http status code is::" + header);
-		
-		if (keySet.contains(header)) {
-			logger.info("Recieved http status code is:" + header);
+			Map<String, Object> headers = in.getHeaders();
 
-			String customError = ErrorBuilder.generateError(header);
+			Integer header = (Integer) headers.get("CamelHttpResponseCode");
 
-			logger.debug("Error is:" + customError);
-			exchange.getIn().setBody(customError);
-		} else if (header == null || header != 200) {
-			
-			logger.debug("Recieved http status code is:" + header);		
-			String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage("UNKNOWN");
-			
-			logger.info("Built default error message");
-			exchange.getIn().setBody(defaultErrorMessage);
+			Set<Integer> keySet = errorCodeByErrorNumber.keySet();
+			logger.info("Recieved http status code is::" + header);
 
+			if (keySet.contains(header)) {
+				logger.info("Recieved http status code is:" + header);
+
+				String customError = ErrorBuilder.generateError(header, null);
+
+				logger.debug("Error is:" + customError);
+				exchange.getIn().setBody(customError);
+			} else if (header == null || header != 200) {
+
+				logger.debug("Recieved http status code is:" + header);
+				String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage("An unknown error has occurred.");
+
+				logger.info("Built default error message");
+				exchange.getIn().setBody(defaultErrorMessage);
+
+			}
+		} catch (Exception e) {
+			throw new CamelCustomException("An unknown error has occurred.");
 		}
 
 	}
