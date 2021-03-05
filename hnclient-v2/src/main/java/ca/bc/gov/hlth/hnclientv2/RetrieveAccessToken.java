@@ -1,5 +1,6 @@
 package ca.bc.gov.hlth.hnclientv2;
 
+import ca.bc.gov.hlth.error.CamelCustomException;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
@@ -7,6 +8,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -32,11 +34,11 @@ public class RetrieveAccessToken {
         Objects.requireNonNull(this.clientAuthBuilder, "Requires client authentication.");
     }
 
-    public synchronized String getToken() throws Exception {
+    public synchronized String getToken() throws CamelCustomException {
 
         // Reuse the token if the expiry time is more than a minute away
         if (Instant.now().toEpochMilli() + 60_000 < tokenExpiryTime) {
-            logger.info(String.format("Using existing access token"));
+            logger.info("Using existing access token");
             logger.debug(String.format("Access token: %s", accessToken.toJSONString()));
             return accessToken.toAuthorizationHeader();
         }
@@ -50,11 +52,19 @@ public class RetrieveAccessToken {
         // Make the token request
         TokenRequest request = new TokenRequest(tokenEndpointUri, clientAuthentication, clientGrant, requiredScopes);
 
-        TokenResponse response = TokenResponse.parse(request.toHTTPRequest().send());
+        TokenResponse response;
+        try {
+            response = TokenResponse.parse(request.toHTTPRequest().send());
+        } catch (ParseException | IOException exception) {
+            // TODO this should probably be some kind of http exception that generates the MessageUtil.SERVER_NO_CONNECTION error
+            throw new CamelCustomException(exception.getMessage());
+        }
+
+        // Check if we got a 2xx response back from the server
         if (!response.indicatesSuccess()) {
-            // TODO - handle this error
             TokenErrorResponse errorResponse = response.toErrorResponse();
-            throw new IllegalStateException(errorResponse.toJSONObject().toString());
+            // TODO this should probably be some kind of http exception that generates the MessageUtil.SERVER_NO_CONNECTION error
+            throw new CamelCustomException(errorResponse.toJSONObject().toString());
         }
 
         AccessTokenResponse successResponse = response.toSuccessResponse();

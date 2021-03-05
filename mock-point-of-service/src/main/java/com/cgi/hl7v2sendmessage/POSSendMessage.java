@@ -94,7 +94,7 @@ public class POSSendMessage {
 
 				// separate DT Segment from HL7 message (aMessage)
 				dataSegmentout = dtSegment.substring(0, 12).getBytes("UTF-8");
-				System.out.println("datasegmentout---" + dataSegmentout);
+
 				dataHL7out = dtSegment.substring(12).getBytes("UTF-8");
 
 				// grab the hostname of the computer
@@ -143,7 +143,6 @@ public class POSSendMessage {
 
 						// Look for the start of data
 						if (headerIn.contains(DATA_INDICATOR)) {
-							System.out.println(headerIn);
 							int messageLength = Integer
 									.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
 
@@ -163,8 +162,6 @@ public class POSSendMessage {
 							dataHL7in = new byte[messageLength];
 							socketInput.read(dataHL7in, 0, messageLength);
 							HL7IN = unScrambleData(dataHL7in);
-							
-							System.out.println("POS HL7in-----------"+HL7IN);
 
 							int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
 
@@ -277,7 +274,6 @@ public class POSSendMessage {
 		String lengthOfMessage = String.valueOf(aMessage.length());
 		aMessage = "DT" + TEN_ZEROS.substring(0, TEN_ZEROS.length() - lengthOfMessage.length()) + lengthOfMessage
 				+ aMessage;
-		System.out.println(aMessage);
 		return aMessage;
 	}
 

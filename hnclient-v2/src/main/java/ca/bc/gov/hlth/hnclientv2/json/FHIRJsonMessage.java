@@ -11,7 +11,7 @@ package ca.bc.gov.hlth.hnclientv2.json;
 public class FHIRJsonMessage {
 
 	private String v2EncodingMessageData;
-	private String recourceType;
+	private String resourceType;
 	private String status;
 	private String contentType;	
 	
@@ -24,12 +24,12 @@ public class FHIRJsonMessage {
 		this.v2EncodingMessageData = v2MessageData;
 	}
 
-	public String getRecourceType() {
-		return recourceType;
+	public String getResourceType() {
+		return resourceType;
 	}
 
-	public void setRecourceType(String recourceType) {
-		this.recourceType = recourceType;
+	public void setResourceType(String resourceType) {
+		this.resourceType = resourceType;
 	}
 
 	public String getStatus() {
