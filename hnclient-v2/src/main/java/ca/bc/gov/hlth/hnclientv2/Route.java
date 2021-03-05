@@ -87,7 +87,6 @@ public class Route extends RouteBuilder {
         
         onException(IllegalArgumentException.class).process(new FailureProcessor(MessageUtil.INVALID_PARAMETER))
         .log("Recieved body ${body}").handled(true);
-
         
         	from("direct:start")
               .log("Retrieving access token")
@@ -99,6 +98,8 @@ public class Route extends RouteBuilder {
               .log("Sending to HNSecure")
               .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
               .log("Received response from HNSecure")
+              // TODO we might be able to remove this processor and instead just set ?throwExceptionOnFailure=true in which case
+              //  on org.apache.camel.common.HttpOperationFailedException will be thrown and could be handled by an onException handler
               .process(new ErrorProcessor())
               .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
               .convertBodyTo(String.class);

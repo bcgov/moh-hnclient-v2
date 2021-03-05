@@ -5,9 +5,9 @@ import java.util.Map;
 
 public enum ErrorCodes {
 
-	//TODO: Verify error codes with Patrick
+	// TODO: Verify error codes with Patrick
 	SERVER_ERROR(500, "Error connecting to SERVER"), HOST_UNAVAILABLE(401, "Could not connect with the remote host"),
-	REMOTE_TIMEOUT_ERROR(402, "Connection with remote facility timed out");
+	REMOTE_TIMEOUT_ERROR(402, "Connection with remote facility timed out"), UNAUTHORIZED(403, "Unauthorized");
 
 	private int errorCode;
 	private String errorMessage;

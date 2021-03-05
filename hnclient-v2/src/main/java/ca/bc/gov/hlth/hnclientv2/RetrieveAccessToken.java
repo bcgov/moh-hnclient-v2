@@ -1,6 +1,7 @@
 package ca.bc.gov.hlth.hnclientv2;
 
 import ca.bc.gov.hlth.error.CamelCustomException;
+import ca.bc.gov.hlth.error.ServerNoConnectionException;
 import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
@@ -57,14 +58,14 @@ public class RetrieveAccessToken {
             response = TokenResponse.parse(request.toHTTPRequest().send());
         } catch (ParseException | IOException exception) {
             // TODO this should probably be some kind of http exception that generates the MessageUtil.SERVER_NO_CONNECTION error
-            throw new CamelCustomException(exception.getMessage());
+            throw new ServerNoConnectionException(exception.getMessage());
         }
 
         // Check if we got a 2xx response back from the server
         if (!response.indicatesSuccess()) {
             TokenErrorResponse errorResponse = response.toErrorResponse();
             // TODO this should probably be some kind of http exception that generates the MessageUtil.SERVER_NO_CONNECTION error
-            throw new CamelCustomException(errorResponse.toJSONObject().toString());
+            throw new ServerNoConnectionException(errorResponse.toJSONObject().toString());
         }
 
         AccessTokenResponse successResponse = response.toSuccessResponse();

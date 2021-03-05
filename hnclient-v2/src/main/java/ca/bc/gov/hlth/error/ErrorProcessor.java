@@ -27,7 +27,7 @@ public class ErrorProcessor implements Processor {
 			Integer header = (Integer) headers.get("CamelHttpResponseCode");
 
 			Set<Integer> keySet = errorCodeByErrorNumber.keySet();
-			logger.info("Recieved http status code is::" + header);
+			logger.info("Recieved http status code is:" + header);
 
 			if (keySet.contains(header)) {
 				logger.info("Recieved http status code is:" + header);
