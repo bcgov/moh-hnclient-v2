@@ -6,7 +6,6 @@ The `hnclient-v2` application will receive an HL7v2 message over plain TCP and f
 
 This project also includes applications that mock-out dependencies or provide additional functionality:
  - `mock-point-of-service`: a point of service application that sends an HL7v2 message over MLLP.
- - `mock-hnsecure`: a resource endpoint that receives a message and validates the access token.
  - `renew-client-auth-certs`: a tool to renew the jks file used to authenticate to Keycloak an retreive an access token. The functionality of this tool is also built into hnclient-v2 but in that case will only run once the certificate has reached 30 days from expiry. 
 
  ![hnclientv2](https://user-images.githubusercontent.com/1767127/88949525-36f92f80-d248-11ea-9de7-1479222f1cfd.png)
@@ -44,26 +43,21 @@ In order for `hnclient-v2` to get access tokens from Keycloak, it needs to trust
 
 # Run the applications
 
-`hnclient-v2` and `mock-hnsecure` can be run from the command line:
+NB: The `hnclient-v2` application requires the [HNS-ESB application](https://github.com/bcgov/moh-hni-esb) to be running so that it has somewhere to send messages to. The `hnsecure-` properties in the `application.properties` are used to specify the endpiont of the HNS-ESB.
+
+`hnclient-v2` can be run from the command line:
 
 ```
 cd hnclient-v2
 mvn compile camel:run
 ```
 
-```
-cd mock-hnsecure
-mvn compile camel:run
-```
-
-After `hnclient-v2` and `mock-hnsecure` are running, you can send a message using `mock-point-of-service`:
+After `hnclient-v2` is running, you can send a message using `mock-point-of-service`:
 
 ```
 cd mock-point-of-service
 mvn compile exec:java
 ```
-
-On a Windows machine, you can run `startcamel.bat` to run the above commands.
 
 # Integrating with Kong (optional)
 
