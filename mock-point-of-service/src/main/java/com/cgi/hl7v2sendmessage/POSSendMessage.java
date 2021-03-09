@@ -9,25 +9,25 @@ public class POSSendMessage {
 
 	private static Socket netSocket = null;
 
-	private static byte decodeSeed = 0;
+	private  byte decodeSeed = 0;
 
 	// HandShake Segment
-	private static byte handShakeSegment[] = new byte[12];
-	private static byte handShakeData[] = new byte[8];
+	private  byte handShakeSegment[] = new byte[12];
+	private  byte handShakeData[] = new byte[8];
 
 	// define ten cute little 0's contained in the hnclient's heart beat.
 	private static final String TEN_ZEROS = "0000000000";
 
 	// DT segments received from HNClient
-	private static byte dataSegmentin[] = new byte[12];
-	private static byte dataHL7in[];
+	private  byte dataSegmentin[] = new byte[12];
+	private  byte dataHL7in[];
 
 	// DT segments to send to HNClient
-	private static byte dataSegmentout[] = new byte[12];
-	private static byte dataHL7out[];
+	private  byte dataSegmentout[] = new byte[12];
+	private  byte dataHL7out[];
 
 	// Station Idetification Segment
-	private static StringBuffer ipAddress = new StringBuffer("                                            "); // 44 spaces
+	private  StringBuffer ipAddress = new StringBuffer("                                            "); // 44 spaces
 
 	// data indicator
 	private static final String DATA_INDICATOR = "DT";
@@ -40,8 +40,15 @@ public class POSSendMessage {
 
 	private static String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
 			+ "ZHD|20170125122125|^^00000010|HNAIADMINISTRATION||||2.4\n" + "PID||1234567890^^^BC^PH";
-
+	
+	
 	public static void main(String args[]) {
+		POSSendMessage obj = new POSSendMessage();
+		obj.send();
+	}
+
+	private void send() {
+		
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 		int numSocketReadTries = 0;
@@ -87,7 +94,7 @@ public class POSSendMessage {
 
 				// separate DT Segment from HL7 message (aMessage)
 				dataSegmentout = dtSegment.substring(0, 12).getBytes("UTF-8");
-				System.out.println("datasegmentout---" + dataSegmentout);
+
 				dataHL7out = dtSegment.substring(12).getBytes("UTF-8");
 
 				// grab the hostname of the computer
@@ -136,7 +143,6 @@ public class POSSendMessage {
 
 						// Look for the start of data
 						if (headerIn.contains(DATA_INDICATOR)) {
-							System.out.println(headerIn);
 							int messageLength = Integer
 									.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
 
@@ -156,8 +162,6 @@ public class POSSendMessage {
 							dataHL7in = new byte[messageLength];
 							socketInput.read(dataHL7in, 0, messageLength);
 							HL7IN = unScrambleData(dataHL7in);
-							
-							System.out.println("POS HL7in-----------"+HL7IN);
 
 							int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
 
@@ -204,7 +208,7 @@ public class POSSendMessage {
 	 * @param aByte array of byte
 	 * @return array of byte
 	 */
-	public static byte[] scrambleData(byte[] aByte) {
+	public  byte[] scrambleData(byte[] aByte) {
 		aByte[0] ^= decodeSeed;
 		for (int x = 1; x < aByte.length; x++) {
 			aByte[x] ^= aByte[x - 1];
@@ -244,7 +248,7 @@ public class POSSendMessage {
 	 * @param scrambleByte byte[]
 	 * @return
 	 */
-	public static String unScrambleData(byte[] scrambleByte) {
+	public String unScrambleData(byte[] scrambleByte) {
 
 		byte prevByte = scrambleByte[0];
 		scrambleByte[0] ^= decodeSeed;
@@ -270,7 +274,6 @@ public class POSSendMessage {
 		String lengthOfMessage = String.valueOf(aMessage.length());
 		aMessage = "DT" + TEN_ZEROS.substring(0, TEN_ZEROS.length() - lengthOfMessage.length()) + lengthOfMessage
 				+ aMessage;
-		System.out.println(aMessage);
 		return aMessage;
 	}
 
@@ -280,7 +283,7 @@ public class POSSendMessage {
 	 * @return byte[]
 	 * @throws java.net.UnknownHostException
 	 */
-	private static String getHostName() throws UnknownHostException {
+	private  String getHostName() throws UnknownHostException {
 		try {
 
 			String localAddress = java.net.InetAddress.getLocalHost().toString();

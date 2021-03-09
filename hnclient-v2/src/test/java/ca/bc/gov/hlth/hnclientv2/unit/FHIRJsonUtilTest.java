@@ -112,7 +112,7 @@ public class FHIRJsonUtilTest {
 		FHIRJsonMessage fhirJson = FHIRJsonUtil.parseJson2FHIRMsg(FHIRJsonUtil.createFHIRJsonObj(msgE45));
 		String data = fhirJson.getV2MessageData();
 		assertEquals(fhirJson.getContentType(),"x-application/hl7-v2+er7");
-		assertEquals(fhirJson.getRecourceType(),"DocumentReference");
+		assertEquals(fhirJson.getResourceType(),"DocumentReference");
 		assertEquals(fhirJson.getStatus(),"current");
 	    assertEquals(data,msgE45);
 	}
@@ -122,7 +122,7 @@ public class FHIRJsonUtilTest {
 		FHIRJsonMessage fhirJson = FHIRJsonUtil.parseJson2FHIRMsg(FHIRJsonUtil.createFHIRJsonObj(msgr30));
 		String data = fhirJson.getV2MessageData();
 		assertEquals(fhirJson.getContentType(),"x-application/hl7-v2+er7");
-		assertEquals(fhirJson.getRecourceType(),"DocumentReference");
+		assertEquals(fhirJson.getResourceType(),"DocumentReference");
 		assertEquals(fhirJson.getStatus(),"current");
 	    assertEquals(data,msgr30);
 	}
@@ -132,7 +132,7 @@ public class FHIRJsonUtilTest {
 		FHIRJsonMessage fhirJson = FHIRJsonUtil.parseJson2FHIRMsg(FHIRJsonUtil.createFHIRJsonObj(msgR31));
 		String data = fhirJson.getV2MessageData();
 		assertEquals(fhirJson.getContentType(),"x-application/hl7-v2+er7");
-		assertEquals(fhirJson.getRecourceType(),"DocumentReference");
+		assertEquals(fhirJson.getResourceType(),"DocumentReference");
 		assertEquals(fhirJson.getStatus(),"current");
 	    assertEquals(data,msgR31);
 	}

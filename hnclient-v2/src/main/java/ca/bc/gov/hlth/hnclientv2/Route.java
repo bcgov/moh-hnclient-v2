@@ -1,13 +1,8 @@
 package ca.bc.gov.hlth.hnclientv2;
 
-import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
-import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
-import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
-import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
-import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
-import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
-import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
-import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
+import java.io.File;
+import java.security.KeyStore;
+import java.time.LocalDate;
 
 import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
@@ -16,9 +11,17 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.security.KeyStore;
-import java.time.LocalDate;
+import ca.bc.gov.hlth.error.CamelCustomException;
+import ca.bc.gov.hlth.error.ErrorProcessor;
+import ca.bc.gov.hlth.error.FailureProcessor;
+import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
+import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
+import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
+import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
+import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
+import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
+import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
+import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 
 public class Route extends RouteBuilder {
 
@@ -75,8 +78,17 @@ public class Route extends RouteBuilder {
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
         // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
         renewKeys();
-
-		  from("direct:start")
+        
+        onException(org.apache.http.conn.HttpHostConnectException.class).process(new FailureProcessor(MessageUtil.SERVER_NO_CONNECTION))
+        .log("Recieved body ${body}").handled(true);
+        
+        onException(CamelCustomException.class).process(new FailureProcessor(MessageUtil.UNKNOWN_EXCEPTION))
+        .log("Recieved body ${body}").handled(true);
+        
+        onException(IllegalArgumentException.class).process(new FailureProcessor(MessageUtil.INVALID_PARAMETER))
+        .log("Recieved body ${body}").handled(true);
+        
+        	from("direct:start")
               .log("Retrieving access token")
               .setHeader("Authorization").method(retrieveAccessToken)
               .log("Receiving message and try to create a JSON message") //process a HLV2
@@ -86,6 +98,9 @@ public class Route extends RouteBuilder {
               .log("Sending to HNSecure")
               .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
               .log("Received response from HNSecure")
+              // TODO we might be able to remove this processor and instead just set ?throwExceptionOnFailure=true in which case
+              //  on org.apache.camel.common.HttpOperationFailedException will be thrown and could be handled by an onException handler
+              .process(new ErrorProcessor())
               .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
               .convertBodyTo(String.class);
     }

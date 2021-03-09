@@ -37,6 +37,8 @@ public class Base64Encoder {
      * @return message in base64 format
      */
     public String encodeString(String v2Message) {
+        // TODO it should be impossible for the body to be empty here (the handshake server should catch that)
+        // if we keep this we should throw an exception that causes an HL7Error_Msg_NoInputHL7 response if it is
         if (StringUtil.isNullOrEmpty(v2Message)) {
             throw new IllegalArgumentException("v2Message can't be null or empty");
         } else {

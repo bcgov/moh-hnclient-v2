@@ -84,7 +84,7 @@ public final class FHIRJsonUtil {
 			Object value = hs.getValue();
 			if (value instanceof String) {
 				if (key.equals(FHIR_JSONMESSAGE_RESOURCETYPE))
-					fhirJsonMsg.setRecourceType(value.toString());
+					fhirJsonMsg.setResourceType(value.toString());
 				else if (key.equals(FHIR_JSONMESSAGE_STATUS))
 					fhirJsonMsg.setStatus(value.toString());
 				else {

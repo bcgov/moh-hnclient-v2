@@ -21,9 +21,11 @@ public class ProcessV2ToJson implements Processor {
 	private static final Logger logger = LoggerFactory.getLogger(ProcessV2ToJson.class);
 	
 	@Override
-	public void process(Exchange exchange) throws Exception {
+	public void process(Exchange exchange) {
 		logger.debug("Trying to create a JSON Message.");
-		
+
+		// TODO it should be impossible for the body to be empty here (the handshake server or base64 encoder should catch that)
+		// if we keep this we should throw an exception that causes an HL7Error_Msg_NoInputHL7 response if it is
 		Objects.requireNonNull(exchange.getIn().getBody(),"The HL7 shouldn't be null from the request");
 		String hl7 = exchange.getIn().getBody().toString();
 		if(!StringUtil.isNullOrEmpty(hl7)) {
