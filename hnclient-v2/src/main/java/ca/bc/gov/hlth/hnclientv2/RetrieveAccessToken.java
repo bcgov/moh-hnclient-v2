@@ -1,7 +1,8 @@
-package ca.bc.gov.hlth.hnclientv2.authentication;
+package ca.bc.gov.hlth.hnclientv2;
 
-import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
-import ca.bc.gov.hlth.hnclientv2.error.ServerNoConnectionException;
+import ca.bc.gov.hlth.error.CamelCustomException;
+import ca.bc.gov.hlth.error.ServerNoConnectionException;
+import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.token.AccessToken;

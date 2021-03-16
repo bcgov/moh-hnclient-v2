@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.authentication;
+package ca.bc.gov.hlth.hnclientv2.auth;
 
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 

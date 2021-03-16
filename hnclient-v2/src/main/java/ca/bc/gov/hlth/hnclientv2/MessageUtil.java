@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.error;
+package ca.bc.gov.hlth.hnclientv2;
 
 public class MessageUtil {
 

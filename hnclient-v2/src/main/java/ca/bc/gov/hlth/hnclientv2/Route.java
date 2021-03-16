@@ -4,8 +4,6 @@ import java.io.File;
 import java.security.KeyStore;
 import java.time.LocalDate;
 
-import ca.bc.gov.hlth.hnclientv2.authentication.RetrieveAccessToken;
-import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
@@ -13,13 +11,13 @@ import org.apache.camel.builder.RouteBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
-import ca.bc.gov.hlth.hnclientv2.error.ErrorProcessor;
-import ca.bc.gov.hlth.hnclientv2.error.FailureProcessor;
-import ca.bc.gov.hlth.hnclientv2.authentication.ClientAuthenticationBuilder;
-import ca.bc.gov.hlth.hnclientv2.authentication.ClientIdSecretBuilder;
-import ca.bc.gov.hlth.hnclientv2.authentication.SignedJwtBuilder;
-import ca.bc.gov.hlth.hnclientv2.handshakeserver.HandshakeServer;
+import ca.bc.gov.hlth.error.CamelCustomException;
+import ca.bc.gov.hlth.error.ErrorProcessor;
+import ca.bc.gov.hlth.error.FailureProcessor;
+import ca.bc.gov.hlth.hnclientv2.auth.ClientAuthenticationBuilder;
+import ca.bc.gov.hlth.hnclientv2.auth.ClientIdSecretBuilder;
+import ca.bc.gov.hlth.hnclientv2.auth.SignedJwtBuilder;
+import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
 import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
@@ -62,17 +60,25 @@ public class Route extends RouteBuilder {
 
     /**
      * Camel route that:
-     *   1. Receives a message over tcp using the HandShakeServer to implement a specific handshake protocol
+     *   1. Receives a message over tcp
      *   2. Retrieves a access token using Client Credential Grant
      *   3. Converts the message to base64 format
-     *   4. Wraps the message in a JSON wrapper
-     *   5. Sends the message to an http endpoint (HNS-ESB) with the JWT attached
-     *   6. Returns the response to the original tcp caller
+     *   4. Passes the message to an http endpoint with the JWT attached
+     *   5. Returns the response
+     */
+    /**
+     *
      */
     @Override
     public void configure() throws Exception {
-        init();
 
+        HandshakeServer server = new HandshakeServer(producer);
+
+        ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
+        retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
+        // TODO this might be better to just be run from main but requires a property loader and modifying the retrieveAccessToken
+        renewKeys();
+        
         onException(org.apache.http.conn.HttpHostConnectException.class).process(new FailureProcessor(MessageUtil.SERVER_NO_CONNECTION))
         .log("Recieved body ${body}").handled(true);
         
@@ -82,41 +88,28 @@ public class Route extends RouteBuilder {
         onException(IllegalArgumentException.class).process(new FailureProcessor(MessageUtil.INVALID_PARAMETER))
         .log("Recieved body ${body}").handled(true);
         
-        from("direct:start").routeId("hnclient-route")
-            .log("Retrieving access token")
-            .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")
-            // TODO we should refactor to standardize on beans or processors
-            .setBody().method(new Base64Encoder())
-            .process(new ProcessV2ToJson()).id("ProcessV2ToJson")
-            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-            .log("Sending to HNSecure")
-            .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
-            .log("Received response from HNSecure")
-            // TODO we might be able to remove this processor and instead just set ?throwExceptionOnFailure=true in which case
-            //  on org.apache.camel.common.HttpOperationFailedException will be thrown and could be handled by an onException handler
-            .process(new ErrorProcessor())
-            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-            .convertBodyTo(String.class);
-    }
-
-    // This makes it easier to test the route and keeps some of this initialization code separate from the route config
-    // TODO ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
-    //  to call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
-    public void init() throws Exception {
-        HandshakeServer handshakeServer = new HandshakeServer(producer);
-
-        ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
-        retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
-        if (clientAuthBuilder instanceof SignedJwtBuilder) {
-            renewKeys();
-        }
+        	from("direct:start")
+              .log("Retrieving access token")
+              .setHeader("Authorization").method(retrieveAccessToken)
+              .log("Receiving message and try to create a JSON message") //process a HLV2
+              .setBody().method(new Base64Encoder())
+              .process(new ProcessV2ToJson()).id("ProcessV2ToJson")
+              .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+              .log("Sending to HNSecure")
+              .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false")
+              .log("Received response from HNSecure")
+              // TODO we might be able to remove this processor and instead just set ?throwExceptionOnFailure=true in which case
+              //  on org.apache.camel.common.HttpOperationFailedException will be thrown and could be handled by an onException handler
+              .process(new ErrorProcessor())
+              .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+              .convertBodyTo(String.class);
     }
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {
         if (clientAuthType.equals("SIGNED_JWT")) {
             return new SignedJwtBuilder(new File(jksFilePath), keyAlias, tokenEndpoint, keystorePassword);
         } else if (clientAuthType.equals("CLIENT_ID_SECRET")) {
-            return new ClientIdSecretBuilder(clientId, System.getenv("MOH_HNCLIENT_SECRET"));
+            return new ClientIdSecretBuilder(clientId);
         } else {
             throw new IllegalStateException(String.format("Unrecognized client authentication type: '%s'", clientAuthType));
         }

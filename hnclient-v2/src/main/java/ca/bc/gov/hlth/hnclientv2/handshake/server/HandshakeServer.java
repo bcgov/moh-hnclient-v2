@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.handshakeserver;
+package ca.bc.gov.hlth.hnclientv2.handshake.server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -14,14 +14,12 @@ import org.apache.camel.ProducerTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.bc.gov.hlth.hnclientv2.error.ErrorBuilder;
-import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
+import ca.bc.gov.hlth.error.ErrorBuilder;
+import ca.bc.gov.hlth.hnclientv2.MessageUtil;
 import ca.bc.gov.hlth.hnclientv2.Util;
 import io.netty.util.internal.StringUtil;
 
 public class HandshakeServer {
-
-	private static final Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
 
 	private static final int XFER_HANDSHAKE_SEED = 0;
 	private static final int XFER_HANDSHAKE_SIZE = 8;
@@ -37,19 +35,22 @@ public class HandshakeServer {
 
 	private byte decodeSeed = 0;
 	// DT segments to send to POS
-	private byte[] dataSegmentOut = new byte[12];
+	private byte[] dataSegmentout = new byte[12];
 	private byte[] dataHL7out;
 
 	private static final String TEN_ZEROS = "0000000000";
 
+	private static final Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
+
 	private final ProducerTemplate producer;
 
-	private static final HandshakeUtil util = new HandshakeUtil();
+	private static final Util util = new Util();
 
 	public HandshakeServer(ProducerTemplate producer) {
 		logger.debug("HandshakeServer constructor is called");
 		this.producer = producer;
 		startServer();
+
 	}
 
 	public void startServer() {
@@ -177,14 +178,14 @@ public class HandshakeServer {
 							}
 							String dtSegment = insertHeader(hnSecureResponse);
 
-							dataSegmentOut = dtSegment.substring(0, 12).getBytes(StandardCharsets.UTF_8);
+							dataSegmentout = dtSegment.substring(0, 12).getBytes(StandardCharsets.UTF_8);
 
 							dataHL7out = dtSegment.substring(12).getBytes(StandardCharsets.UTF_8);
 							logger.info("dataHL7out: " + new String(dataHL7out));
 
 							// scramble each segment prior to sending it to BufferedOutputStream
-							util.scrambleData(dataSegmentOut, decodeSeed);
-							socketOutput.write(dataSegmentOut);
+							util.scrambleData(dataSegmentout, decodeSeed);
+							socketOutput.write(dataSegmentout);
 
 							util.scrambleData(dataHL7out, decodeSeed);
 							socketOutput.write(dataHL7out);

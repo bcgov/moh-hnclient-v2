@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.authentication;
+package ca.bc.gov.hlth.hnclientv2.auth;
 
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.Util;

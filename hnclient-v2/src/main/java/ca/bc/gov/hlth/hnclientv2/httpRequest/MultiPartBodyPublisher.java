@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.keystore;
+package ca.bc.gov.hlth.hnclientv2.httpRequest;
 
 import java.io.IOException;
 import java.io.InputStream;

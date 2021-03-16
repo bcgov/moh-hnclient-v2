@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.error;
+package ca.bc.gov.hlth.hnclientv2.unit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -7,7 +7,7 @@ import java.util.Map;
 import org.junit.Test;
 
 
-import ca.bc.gov.hlth.hnclientv2.error.ErrorCodes;
+import ca.bc.gov.hlth.error.ErrorCodes;
 
 public class EnumCodesTest {
 
