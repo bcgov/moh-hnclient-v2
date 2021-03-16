@@ -1,6 +1,5 @@
-package ca.bc.gov.hlth.error;
+package ca.bc.gov.hlth.hnclientv2.error;
 
-import ca.bc.gov.hlth.hnclientv2.MessageUtil;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.slf4j.Logger;

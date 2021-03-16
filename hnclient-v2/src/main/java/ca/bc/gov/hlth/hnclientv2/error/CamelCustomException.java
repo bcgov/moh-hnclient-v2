@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.error;
+package ca.bc.gov.hlth.hnclientv2.error;
 
 public class CamelCustomException extends Exception {
 	
