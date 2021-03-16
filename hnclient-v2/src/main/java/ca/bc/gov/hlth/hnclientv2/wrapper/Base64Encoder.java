@@ -22,21 +22,8 @@ public class Base64Encoder {
     private static Logger logger = LoggerFactory.getLogger(Base64Encoder.class);
 
     @Handler
-    public String convertToBase64String(String vMessage) {
-        
-        logger.debug("v2HL7 message to be encoded: {}", vMessage);       
-        String encodedString = encodeString(vMessage);
-        logger.debug("Message encoded successfully : {}", encodedString);
+    public String convertToBase64String(String v2Message) {
 
-        return encodedString;
-
-    }
-
-    /**
-     * @param v2Message the v2 message
-     * @return message in base64 format
-     */
-    public String encodeString(String v2Message) {
         // TODO it should be impossible for the body to be empty here (the handshake server should catch that)
         // if we keep this we should throw an exception that causes an HL7Error_Msg_NoInputHL7 response if it is
         if (StringUtil.isNullOrEmpty(v2Message)) {
@@ -44,8 +31,8 @@ public class Base64Encoder {
         } else {
             return new String(Base64.getEncoder().encode(v2Message.getBytes()));
         }
-    }
 
+    }
 
 }
 	
