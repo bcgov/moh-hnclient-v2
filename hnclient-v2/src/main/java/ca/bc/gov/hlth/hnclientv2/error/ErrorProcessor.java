@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.error;
+package ca.bc.gov.hlth.hnclientv2.error;
 
 import java.util.Map;
 import java.util.Set;

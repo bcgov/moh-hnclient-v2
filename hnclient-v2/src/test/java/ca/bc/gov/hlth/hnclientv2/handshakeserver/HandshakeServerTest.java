@@ -1,19 +1,16 @@
-package ca.bc.gov.hlth.hnclientv2.unit;
+package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import ca.bc.gov.hlth.hnclientv2.Util;
-import ca.bc.gov.hlth.hnclientv2.handshake.server.HandshakeServer;
-
 public class HandshakeServerTest {
 	private static byte XFER_HANDSHAKE_SEED = 0;
 
 	private static String HNET_RTRN_SUCCESS = "HNET_RTRN_SUCCESS";
 	private static String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
-	private static final Util util = new Util();
+	private static final HandshakeUtil util = new HandshakeUtil();
 
 	@Test
 	public void test_generateHandshakeData_returns_success() {
