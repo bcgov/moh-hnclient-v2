@@ -29,8 +29,7 @@ public class EnumCodesTest {
 		String retrieveEnumByValue = ErrorCodes.retrieveEnumByValue(403);
 		assertEquals(retrieveEnumByValue, "Forbidden");
 	}
-	
-	
+
 	@Test
 	public void testMessage_ErrorCode404() {
 		String retrieveEnumByValue = ErrorCodes.retrieveEnumByValue(404);
@@ -60,7 +59,6 @@ public class EnumCodesTest {
 		String retrieveEnumByValue = ErrorCodes.retrieveEnumByValue(502);
 		assertEquals(retrieveEnumByValue, "Bad Gateway");
 	}
-	
 
 	@Test
 	public void testMessage_ErrorCode503() {
