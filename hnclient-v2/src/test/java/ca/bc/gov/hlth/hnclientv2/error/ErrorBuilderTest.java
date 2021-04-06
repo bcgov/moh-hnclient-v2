@@ -75,23 +75,15 @@ public class ErrorBuilderTest extends CamelTestSupport {
 
 	@Test
 	public void testErrorBuilder_header401() throws Exception {
-		String expectedErrorMsg = "Could not connect with the remote host";
+		String expectedErrorMsg = "Unauthorized";
 		Integer responseCodeHeader = 401;
 		extractErrorMessage(expectedErrorMsg, responseCodeHeader);
 	}
 
-
 	@Test
 	public void testErrorBuilder_header500() throws Exception {
-		String expectedErrorMsg = "Error connecting to SERVER";
+		String expectedErrorMsg = "Internal Server Error";
 		Integer responseCodeHeader = 500;
-		extractErrorMessage(expectedErrorMsg, responseCodeHeader);
-	}
-
-	@Test
-	public void testErrorBuilder_header402() throws Exception {
-		String expectedErrorMsg = "Connection with remote facility timed out";
-		Integer responseCodeHeader = 402;
 		extractErrorMessage(expectedErrorMsg, responseCodeHeader);
 	}
 

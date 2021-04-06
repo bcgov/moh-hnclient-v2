@@ -50,6 +50,7 @@ public class HandshakeServer {
 		logger.debug("HandshakeServer constructor is called");
 		this.producer = producer;
 		startServer();
+
 	}
 
 	public void startServer() {
@@ -132,8 +133,6 @@ public class HandshakeServer {
 										// Give up eventually.
 										logger.debug("Could not find entire message.");
 										ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-										hnSecureResponse = ErrorBuilder
-												.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_NoInputHL7);
 
 									}
 								}
@@ -143,25 +142,22 @@ public class HandshakeServer {
 								socketInput.read(message2, 0, messageLength);
 								extractData(message2);
 								String HL7IN = new String(message2, StandardCharsets.UTF_8);
-
 								int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
 
 								if (indexOfMSG != -1) {
 									// Read whatever is after the MSH segment.
 									String aResponse = HL7IN.substring(indexOfMSG) + "\r";
+									HL7IN = aResponse;
 									logger.info("HL7 message recived from POS: " + aResponse);
-									try {
-										hnSecureResponse = (String) producer.requestBody(aResponse);
-									} catch (Exception e) {
-										logger.debug("Failed to send request to remote server");
-										hnSecureResponse = ErrorBuilder
-												.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
-									}
-
-								} else {
-									logger.debug(MessageUtil.HL7Error_Msg_MSHSegmentMissing);
+								}
+								// Send received message to server
+								logger.info("HL7 message recived from POS: " + HL7IN);
+								try {
+									hnSecureResponse = (String) producer.requestBody(HL7IN);
+								} catch (Exception e) {
+									logger.debug("Failed to send request to remote server");
 									hnSecureResponse = ErrorBuilder
-											.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_MSHSegmentMissing, null);
+											.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
 								}
 
 							} else {
@@ -175,29 +171,19 @@ public class HandshakeServer {
 								hnSecureResponse = ErrorBuilder
 										.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable);
 							}
-							String dtSegment = insertHeader(hnSecureResponse);
-
-							dataSegmentOut = dtSegment.substring(0, 12).getBytes(StandardCharsets.UTF_8);
-
-							dataHL7out = dtSegment.substring(12).getBytes(StandardCharsets.UTF_8);
-							logger.info("dataHL7out: " + new String(dataHL7out));
-
-							// scramble each segment prior to sending it to BufferedOutputStream
-							util.scrambleData(dataSegmentOut, decodeSeed);
-							socketOutput.write(dataSegmentOut);
-
-							util.scrambleData(dataHL7out, decodeSeed);
-							socketOutput.write(dataHL7out);
-							socketOutput.flush();
+							sendResponse(socketOutput, hnSecureResponse);
 
 							// sent Response to POS
 							logger.info("HL7 transaction is done: {}", ret_code);
-
-						} else
-
-							logger.info("HL7 transaction is done: {}", ret_code);
-						// reset decodeseed
-						decodeSeed = 0;
+							decodeSeed = 0;
+						} else {
+							logger.info("Handshake failed: {}", ret_code);
+							hnSecureResponse = ErrorBuilder
+									.buildDefaultErrorMessage(MessageUtil.HNET_RTRN_REMOTETIMEOUT);
+							sendResponse(socketOutput, hnSecureResponse);
+							// reset decodeseed
+							decodeSeed = 0;
+						}
 					}
 				} catch (SocketException e) {
 					e.printStackTrace();
@@ -206,6 +192,23 @@ public class HandshakeServer {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+			}
+
+			private void sendResponse(BufferedOutputStream socketOutput, String hnSecureResponse) throws IOException {
+				String dtSegment = insertHeader(hnSecureResponse);
+
+				dataSegmentOut = dtSegment.substring(0, 12).getBytes(StandardCharsets.UTF_8);
+
+				dataHL7out = dtSegment.substring(12).getBytes(StandardCharsets.UTF_8);
+				logger.info("dataHL7out: " + new String(dataHL7out));
+
+				// scramble each segment prior to sending it to BufferedOutputStream
+				util.scrambleData(dataSegmentOut, decodeSeed);
+				socketOutput.write(dataSegmentOut);
+
+				util.scrambleData(dataHL7out, decodeSeed);
+				socketOutput.write(dataHL7out);
+				socketOutput.flush();
 			}
 
 			private void extractData(byte[] dtsegment) {
@@ -300,7 +303,7 @@ public class HandshakeServer {
 
 		} else if (clientHandshakeData == null) {
 			logger.debug("ClientHandshakeData parameter cannot be NULL" + funcName + "HNET_RTRN_INVALIDPARAMETER");
-			retCode =MessageUtil.HNET_RTRN_INVALIDPARAMETER;
+			retCode = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
 
 			return retCode;
 		} else {

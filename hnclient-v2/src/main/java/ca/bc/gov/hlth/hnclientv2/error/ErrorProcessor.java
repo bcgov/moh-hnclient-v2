@@ -36,7 +36,7 @@ public class ErrorProcessor implements Processor {
 
 				logger.debug("Error is:" + customError);
 				exchange.getIn().setBody(customError);
-			} else if (header == null || header != 200) {
+			} else if (header == null) {
 
 				logger.debug("Recieved http status code is:" + header);
 				String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage("An unknown error has occurred.");

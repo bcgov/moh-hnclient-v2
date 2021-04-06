@@ -6,8 +6,18 @@ import java.util.Map;
 public enum ErrorCodes {
 
 	// TODO: Verify error codes with Patrick
-	SERVER_ERROR(500, "Error connecting to SERVER"), HOST_UNAVAILABLE(401, "Could not connect with the remote host"),
-	REMOTE_TIMEOUT_ERROR(402, "Connection with remote facility timed out"), UNAUTHORIZED(403, "Unauthorized");
+	
+	BAD_REQUEST(400,"Bad Request"),
+	UNAUTHORIZED(401,"Unauthorized"),
+	FORBIDDEN(403,"Forbidden"),
+	NOT_FOUND(404,"Not Found"),
+	METHOD_NOT_ALLOWED(405,"Method Not Allowed"),
+	REQUEST_TIMEOUT(408,"Request Timeout"),
+	INTERNAL_SERVER_ERROR(500,"Internal Server Error"),
+	BAD_GATEWAY(502,"Bad Gateway"),
+	SERVICE_UNAVAILABLE(503,"Service Unavailable"),
+	GATEWAY_TIMEOUT(504,"Gateway Timeout");
+	
 
 	private int errorCode;
 	private String errorMessage;
