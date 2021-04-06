@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.route;
+package ca.bc.gov.hlth.hnclientv2.error;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +10,6 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit4.CamelTestSupport;
 import org.junit.Test;
 
-import ca.bc.gov.hlth.error.ErrorProcessor;
 import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
 import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 
