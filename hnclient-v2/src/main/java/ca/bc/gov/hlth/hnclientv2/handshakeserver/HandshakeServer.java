@@ -120,9 +120,9 @@ public class HandshakeServer {
 									hnSecureResponse = ErrorBuilder
 											.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
 								}
-								logger.info(String.format("Received from originator %s byte DT Data Block: %s",dtsegment.length, ret_code ));
+								
 							}
-
+							
 							// Look for the start of data
 							if (headerIn.contains(DATA_INDICATOR)) {
 								int messageLength = Integer
@@ -144,7 +144,8 @@ public class HandshakeServer {
 
 									}
 								}
-
+								
+								logger.info(String.format("Received from originator %s byte DT Data Block: %s",messageLength, ret_code ));
 								// read dtsegment data
 								byte[] message2 = new byte[messageLength];
 								socketInput.read(message2, 0, messageLength);
@@ -183,10 +184,10 @@ public class HandshakeServer {
 							sendResponse(socketOutput, hnSecureResponse);
 
 							// sent Response to POS
-							logger.info("HL7 transaction is done: {}", ret_code);
+							logger.info(String.format("HL7 transaction is done: %s %n", ret_code," /n"));
 							decodeSeed = 0;
 						} else {
-							logger.info("Handshake failed: {}", ret_code);
+							logger.info(String.format("Handshake failed: %s %n", ret_code));
 							hnSecureResponse = ErrorBuilder
 									.buildDefaultErrorMessage(MessageUtil.HNET_RTRN_REMOTETIMEOUT);
 							sendResponse(socketOutput, hnSecureResponse);
