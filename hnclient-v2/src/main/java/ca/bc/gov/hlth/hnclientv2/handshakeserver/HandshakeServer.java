@@ -54,7 +54,7 @@ public class HandshakeServer {
 	}
 
 	public void connectionHandler() {
-		final String methodName = "performTransaction";
+		final String methodName = "connectionHandler";
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 		final int SERVER_SOCKET = 5555;
@@ -117,7 +117,7 @@ public class HandshakeServer {
 			private void performTransaction(BufferedInputStream socketInput, BufferedOutputStream socketOutput)
 					throws IOException, InterruptedException {
 				String headerIn;
-				String methodName = "performTran";
+				String methodName = "performTransaction";
 				String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 
 				logger.info("{} - Start performing message transaction: {}", methodName, ret_code);
