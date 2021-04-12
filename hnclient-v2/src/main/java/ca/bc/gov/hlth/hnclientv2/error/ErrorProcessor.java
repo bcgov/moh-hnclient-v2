@@ -27,10 +27,10 @@ public class ErrorProcessor implements Processor {
 			Integer header = (Integer) headers.get("CamelHttpResponseCode");
 
 			Set<Integer> keySet = errorCodeByErrorNumber.keySet();
-			logger.info("Recieved http status code is:" + header);
+			logger.info("Received http status code is:" + header);
 
 			if (keySet.contains(header)) {
-				logger.info("Recieved http status code is:" + header);
+				logger.info("Received http status code is:" + header);
 
 				String customError = ErrorBuilder.generateError(header, null);
 
@@ -38,7 +38,7 @@ public class ErrorProcessor implements Processor {
 				exchange.getIn().setBody(customError);
 			} else if (header == null) {
 
-				logger.debug("Recieved http status code is:" + header);
+				logger.debug("Received http status code is:" + header);
 				String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage("An unknown error has occurred.");
 
 				logger.info("Built default error message");

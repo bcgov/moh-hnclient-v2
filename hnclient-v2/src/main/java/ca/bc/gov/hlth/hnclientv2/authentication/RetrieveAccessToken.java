@@ -39,7 +39,7 @@ public class RetrieveAccessToken {
         // Reuse the token if the expiry time is more than a minute away
         if (Instant.now().toEpochMilli() + 60_000 < tokenExpiryTime) {
             logger.info("Using existing access token");
-            logger.debug(String.format("Access token: %s", accessToken.toJSONString()));
+            logger.debug("Access token: {}", accessToken.toJSONString());
             return accessToken.toAuthorizationHeader();
         }
 
@@ -74,8 +74,8 @@ public class RetrieveAccessToken {
         // This could be off by a few seconds because it doesn't account for network latency getting the token
         tokenExpiryTime = Instant.now().toEpochMilli() + (accessToken.getLifetime() * 1000);
 
-        logger.debug(String.format("Access token: %s", accessToken.toJSONString()));
-        logger.info(String.format("Token Expires at: %s", tokenExpiryTime));
+        logger.debug("Access token: {}", accessToken.toJSONString());
+        logger.info("Token Expires at: {}", tokenExpiryTime);
 
         return accessToken.toAuthorizationHeader();
     }
