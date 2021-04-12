@@ -43,27 +43,31 @@ public class HandshakeServer {
 
 	private final ProducerTemplate producer;
 
+	private String hnSecureResponse = "";
+
 	private static final HandshakeUtil util = new HandshakeUtil();
 
 	public HandshakeServer(ProducerTemplate producer) {
 		this.producer = producer;
-		performTransaction();
+		connectionHandler();
 
 	}
 
-	public void performTransaction() {
+	public void connectionHandler() {
 		final String methodName = "performTransaction";
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 		final int SERVER_SOCKET = 5555;
 
 		Runnable serverTask = new Runnable() {
+			/**
+			 *
+			 */
 			@Override
 			public void run() {
+				ServerSocket mysocket;
 				try {
-
-					ServerSocket mysocket = new ServerSocket(SERVER_SOCKET);
-					String headerIn;
+					mysocket = new ServerSocket(SERVER_SOCKET);
 					while (true) {
 						Socket connectionSocket = mysocket.accept();
 
@@ -80,121 +84,9 @@ public class HandshakeServer {
 
 						String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 
-						String hnSecureResponse = "";
-
 						if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
-							logger.info("{} - Start performing message transaction: {}", methodName, ret_code);
-							// read SI segment
-							if (socketInput.available() > 0) {
-								byte[] message = new byte[44];
-								socketInput.read(message);
-								String siSegment = extractData(message);
-								logger.debug("{} - Received from originator {} byte SI Data Block: {}", methodName,
-										message.length, ret_code);
-								logger.info("{} - Received SI segment: {}", methodName, siSegment);
-							} else {
-								ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-								logger.debug("{} - Error receiving SI segment from Listener: {}", methodName, ret_code);
+							performTransaction(socketInput, socketOutput);
 
-							}
-
-							// read dtsegment header
-							byte[] dtsegment = new byte[12];
-
-							socketInput.read(dtsegment, 0, 12);
-							extractData(dtsegment);
-							int numSocketReadTries = 0;
-							headerIn = new String(dtsegment, StandardCharsets.UTF_8);
-
-							while (!headerIn.contains(DATA_INDICATOR)) {
-								socketInput.read(dtsegment, 0, 12);
-								headerIn = util.unScrambleData(dtsegment, decodeSeed);
-
-								if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
-									numSocketReadTries++;
-									// Give other packets a chance to arrive and
-									// avoid trying to monopolize CPU time..
-									Thread.sleep(SOCKET_READ_SLEEP_TIME);
-								} else {
-									// Give up eventually.
-									logger.debug("{} Error receiving DT segment from Listener: {}", methodName,
-											ret_code);
-									ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-									hnSecureResponse = ErrorBuilder
-											.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
-								}
-
-							}
-
-							// Look for the start of data
-							if (headerIn.contains(DATA_INDICATOR)) {
-								int messageLength = Integer
-										.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
-
-								numSocketReadTries = 0;
-
-								while (socketInput.available() < messageLength) {
-									if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
-										numSocketReadTries++;
-										// Give other packets a chance to arrive and
-										// avoid trying to monopolize CPU time..
-										Thread.sleep(SOCKET_READ_SLEEP_TIME);
-									} else {
-										// Give up eventually.
-										ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-										logger.debug("{} - Error receiving HL7 message from Listener: {}", methodName,
-												ret_code);
-
-									}
-								}
-
-								logger.debug("{} - Received from originator {} byte DT Data Block: {}", methodName,
-										messageLength, ret_code);
-								// read dtsegment data
-								byte[] dtMessage = new byte[messageLength];
-								socketInput.read(dtMessage, 0, messageLength);
-								extractData(dtMessage);
-								String HL7IN = new String(dtMessage, StandardCharsets.UTF_8);
-								int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
-
-								if (indexOfMSG != -1) {
-									// Read whatever is after the MSH segment.
-									String aResponse = HL7IN.substring(indexOfMSG) + "\r";
-									HL7IN = aResponse;
-									logger.debug("{} - HL7 message recived from POS: {}", methodName, aResponse);
-								}
-								// Send received message to server
-								logger.debug("{} - HL7 message received from POS: {}", methodName, HL7IN);
-								try {
-									logger.info("{} - Attempting to send the txn to remote server: {}", methodName,
-											ret_code);
-									hnSecureResponse = (String) producer.requestBody(HL7IN);
-								} catch (Exception e) {
-									ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
-									logger.debug("{} - Failed to send request to remote server:{}", methodName,
-											ret_code);
-									hnSecureResponse = ErrorBuilder
-											.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
-								}
-
-							} else {
-								logger.debug("{} - Error recieving DT segment: {}", methodName,
-										MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
-								hnSecureResponse = ErrorBuilder
-										.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
-							}
-
-							// Write Response back to POS
-							if (StringUtil.isNullOrEmpty(hnSecureResponse)) {
-								hnSecureResponse = ErrorBuilder
-										.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable);
-							}
-							sendResponse(socketOutput, hnSecureResponse);
-
-							// sent Response to POS
-							logger.info("{} - HL7 transaction is done: {} {}", methodName, ret_code,
-									System.lineSeparator());
-							decodeSeed = 0;
 						} else {
 							logger.info("{} - Handshake failed: {} {}", methodName, ret_code, System.lineSeparator());
 							hnSecureResponse = ErrorBuilder.buildDefaultErrorMessage(ret_code);
@@ -208,12 +100,146 @@ public class HandshakeServer {
 				} catch (IOException e) {
 					logger.error(e.getMessage());
 				} catch (InterruptedException e) {
-				logger.error(e.getMessage());
+					logger.error(e.getMessage());
 				}
+
 			}
 
+			/**
+			 * Reads client message and sends request to ESB
+			 * 
+			 * @param socketInput
+			 * @param socketOutput
+			 * @return HNET RETURN MESSAGE
+			 * @throws IOException
+			 * @throws InterruptedException
+			 */
+			private void performTransaction(BufferedInputStream socketInput, BufferedOutputStream socketOutput)
+					throws IOException, InterruptedException {
+				String headerIn;
+				String methodName = "performTran";
+				String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
+
+				logger.info("{} - Start performing message transaction: {}", methodName, ret_code);
+				// read SI segment
+				if (socketInput.available() > 0) {
+					byte[] message = new byte[44];
+					socketInput.read(message);
+					String siSegment = extractData(message);
+					logger.debug("{} - Received from originator {} byte SI Data Block: {}", methodName, message.length,
+							ret_code);
+					logger.info("{} - Received SI segment: {}", methodName, siSegment);
+				} else {
+					ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
+					logger.debug("{} - Error receiving SI segment from Listener: {}", methodName, ret_code);
+
+				}
+
+				// read dtsegment header
+				byte[] dtsegment = new byte[12];
+
+				socketInput.read(dtsegment, 0, 12);
+				extractData(dtsegment);
+				int numSocketReadTries = 0;
+				headerIn = new String(dtsegment, StandardCharsets.UTF_8);
+
+				while (!headerIn.contains(DATA_INDICATOR)) {
+					socketInput.read(dtsegment, 0, 12);
+					headerIn = util.unScrambleData(dtsegment, decodeSeed);
+
+					if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+						numSocketReadTries++;
+						// Give other packets a chance to arrive and
+						// avoid trying to monopolize CPU time..
+						Thread.sleep(SOCKET_READ_SLEEP_TIME);
+					} else {
+						// Give up eventually.
+						logger.debug("{} Error receiving DT segment from Listener: {}", methodName, ret_code);
+						ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
+						hnSecureResponse = ErrorBuilder
+								.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
+					}
+
+				}
+
+				// Look for the start of data
+				if (headerIn.contains(DATA_INDICATOR)) {
+					int messageLength = Integer
+							.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
+
+					numSocketReadTries = 0;
+
+					while (socketInput.available() < messageLength) {
+						if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+							numSocketReadTries++;
+							// Give other packets a chance to arrive and
+							// avoid trying to monopolize CPU time..
+							Thread.sleep(SOCKET_READ_SLEEP_TIME);
+						} else {
+							// Give up eventually.
+							ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
+							logger.debug("{} - Error receiving HL7 message from Listener: {}", methodName, ret_code);
+
+						}
+					}
+
+					logger.debug("{} - Received from originator {} byte DT Data Block: {}", methodName, messageLength,
+							ret_code);
+					// read dtsegment data
+					byte[] dtMessage = new byte[messageLength];
+					socketInput.read(dtMessage, 0, messageLength);
+					extractData(dtMessage);
+					String HL7IN = new String(dtMessage, StandardCharsets.UTF_8);
+					int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
+
+					if (indexOfMSG != -1) {
+						// Read whatever is after the MSH segment.
+						String aResponse = HL7IN.substring(indexOfMSG) + "\r";
+						HL7IN = aResponse;
+						logger.debug("{} - HL7 message recived from POS: {}", methodName, aResponse);
+					}
+
+					// Send received message to server
+					logger.debug("{} - HL7 message received from POS: {}", methodName, HL7IN);
+					try {
+						logger.info("{} - Attempting to send the txn to remote server: {}", methodName, ret_code);
+						hnSecureResponse = (String) producer.requestBody(HL7IN);
+					} catch (Exception e) {
+						ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
+						logger.debug("{} - Failed to send request to remote server:{}", methodName, ret_code);
+						hnSecureResponse = ErrorBuilder
+								.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
+					}
+
+				} else {
+					logger.debug("{} - Error recieving DT segment: {}", methodName,
+							MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
+					hnSecureResponse = ErrorBuilder
+							.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
+				}
+
+				// Write Response back to POS
+				if (StringUtil.isNullOrEmpty(hnSecureResponse)) {
+					hnSecureResponse = ErrorBuilder
+							.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable);
+				}
+				sendResponse(socketOutput, hnSecureResponse);
+
+				// sent Response to POS
+				logger.info("{} - HL7 transaction is done: {} {}", methodName, ret_code, System.lineSeparator());
+				decodeSeed = 0;
+
+			}
+
+			/**
+			 * Writes HL7 response back to POS
+			 * 
+			 * @param socketOutput
+			 * @param hnSecureResponse
+			 * @throws IOException
+			 */
 			private void sendResponse(BufferedOutputStream socketOutput, String hnSecureResponse) throws IOException {
-				
+
 				logger.debug("{} Started writing HL7 reponsec back to POS", methodName);
 				String dtSegment = insertHeader(hnSecureResponse);
 
@@ -229,7 +255,7 @@ public class HandshakeServer {
 				util.scrambleData(dataHL7out, decodeSeed);
 				socketOutput.write(dataHL7out);
 				socketOutput.flush();
-				
+
 				logger.debug("{} Ending writing HL7 reponsec back to POS", methodName);
 			}
 
@@ -274,7 +300,7 @@ public class HandshakeServer {
 			return retCode;
 		}
 		/* Create the initial handshake data. **/
-		retCode = generateHandshakeData(handshakeData);
+		retCode = util.generateHandshakeData1(handshakeData);
 
 		/* Now send the Handshake Segment Header. */
 		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {
@@ -377,27 +403,7 @@ public class HandshakeServer {
 		return retCode;
 	}
 
-	/**
-	 * Generates a random array to compute challange string
-	 * 
-	 * @param handShakeData
-	 * @return
-	 */
-	public static String generateHandshakeData(byte[] handShakeData) {
-		String methodName = "generateHandshakeData()";
-		String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 
-		if (handShakeData == null)
-			ret_code = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
-		else {
-			// create random object
-			Random r = new Random(System.currentTimeMillis());
-			// put the next byte in the array
-			r.nextBytes(handShakeData);
-		}
-		logger.debug("{} - Generated random byte array {}", methodName, ret_code);
-		return ret_code;
-	}
 
 	protected String insertHeader(String aMessage) {
 		String lengthOfMessage = String.valueOf(aMessage.length());

@@ -15,14 +15,14 @@ public class HandshakeServerTest {
 	@Test
 	public void test_generateHandshakeData_returns_success() {
 		byte[] handShakeData = new byte[8];
-		String retCode = HandshakeServer.generateHandshakeData(handShakeData);
+		String retCode = util.generateHandshakeData1(handShakeData);
 		assertTrue(retCode.equals(HNET_RTRN_SUCCESS));
 	}
 
 	@Test
 	public void test_generateHandshakeData_returns_invalidparameter() {
 		byte[] handShakeData = null;
-		String retCode = HandshakeServer.generateHandshakeData(handShakeData);
+		String retCode = util.generateHandshakeData1(handShakeData);
 		assertTrue(retCode.equals(HNET_RTRN_INVALIDPARAMETER));
 	}
 
@@ -45,7 +45,7 @@ public class HandshakeServerTest {
 		byte[] handShakeData = new byte[8];
 		byte[] clientHandshakeData = new byte[8];
 
-		HandshakeServer.generateHandshakeData(handShakeData);
+		util.generateHandshakeData1(handShakeData);
 		clientHandshakeData = "clientdata".getBytes();
 
 		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
@@ -59,7 +59,7 @@ public class HandshakeServerTest {
 		byte[] handShakeData = new byte[8];
 		byte[] clientHandshakeData = new byte[8];
 
-		HandshakeServer.generateHandshakeData(handShakeData);
+		util.generateHandshakeData1(handShakeData);
 		clientHandshakeData = handShakeData;
 
 		util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);

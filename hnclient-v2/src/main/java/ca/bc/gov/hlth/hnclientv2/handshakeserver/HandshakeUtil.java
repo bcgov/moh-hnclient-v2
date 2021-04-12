@@ -1,5 +1,9 @@
 package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 
+import java.util.Random;
+
+import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
+
 public class HandshakeUtil {
 
     /**
@@ -64,4 +68,27 @@ public class HandshakeUtil {
         }
         return true;
     }
+    
+    
+	/**
+	 * Generates a random array to compute challange string
+	 * 
+	 * @param handShakeData
+	 * @return
+	 */
+	public String generateHandshakeData1(byte[] handShakeData) {
+		String methodName = "generateHandshakeData()";
+		String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
+
+		if (handShakeData == null)
+			ret_code = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
+		else {
+			// create random object
+			Random r = new Random(System.currentTimeMillis());
+			// put the next byte in the array
+			r.nextBytes(handShakeData);
+		}
+		//logger.debug("{} - Generated random byte array {}", methodName, ret_code);
+		return ret_code;
+	}
 }

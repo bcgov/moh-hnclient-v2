@@ -1,11 +1,5 @@
 package ca.bc.gov.hlth.hnclientv2;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import java.io.UnsupportedEncodingException;
-
-import ca.bc.gov.hlth.hnclientv2.Util;
 import org.junit.Test;
 
 /**
