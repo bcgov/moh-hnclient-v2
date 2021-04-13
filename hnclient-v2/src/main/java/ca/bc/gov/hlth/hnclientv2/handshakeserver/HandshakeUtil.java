@@ -76,8 +76,8 @@ public class HandshakeUtil {
 	 * @param handShakeData
 	 * @return
 	 */
-	public String generateHandshakeData1(byte[] handShakeData) {
-		String methodName = "generateHandshakeData()";
+	public String generateHandshakeData(byte[] handShakeData) {
+		
 		String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 
 		if (handShakeData == null)

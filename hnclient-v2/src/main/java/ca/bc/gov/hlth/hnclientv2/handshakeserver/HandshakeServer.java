@@ -300,7 +300,7 @@ public class HandshakeServer {
 			return retCode;
 		}
 		/* Create the initial handshake data. **/
-		retCode = util.generateHandshakeData1(handshakeData);
+		retCode = util.generateHandshakeData(handshakeData);
 
 		/* Now send the Handshake Segment Header. */
 		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {

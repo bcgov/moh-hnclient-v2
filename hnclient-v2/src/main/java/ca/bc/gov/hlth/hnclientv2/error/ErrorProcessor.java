@@ -19,6 +19,9 @@ public class ErrorProcessor implements Processor {
 
 	@Override
 	public void process(Exchange exchange) throws CamelCustomException {
+		
+		String methodName = "process";
+		
 		try {
 			Message in = exchange.getIn();
 
@@ -27,10 +30,9 @@ public class ErrorProcessor implements Processor {
 			Integer header = (Integer) headers.get("CamelHttpResponseCode");
 
 			Set<Integer> keySet = errorCodeByErrorNumber.keySet();
-			logger.info("Received http status code is:" + header);
 
+			logger.info("{} - Received http status code is: ", methodName, header);
 			if (keySet.contains(header)) {
-				logger.info("Received http status code is:" + header);
 
 				String customError = ErrorBuilder.generateError(header, null);
 
@@ -38,14 +40,14 @@ public class ErrorProcessor implements Processor {
 				exchange.getIn().setBody(customError);
 			} else if (header == null) {
 
-				logger.debug("Received http status code is:" + header);
 				String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage("An unknown error has occurred.");
 
-				logger.info("Built default error message");
 				exchange.getIn().setBody(defaultErrorMessage);
 
 			}
+
 		} catch (Exception e) {
+			logger.debug("{} - Error occured :{}", methodName, e.getMessage());
 			throw new CamelCustomException("An unknown error has occurred.");
 		}
 
