@@ -7,7 +7,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
-import java.util.Random;
 import java.util.Scanner;
 
 import org.apache.camel.ProducerTemplate;
@@ -18,6 +17,12 @@ import ca.bc.gov.hlth.hnclientv2.error.ErrorBuilder;
 import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
 import io.netty.util.internal.StringUtil;
 
+/**
+ * This class connects to listener, does handshake and sends request to ESB.
+ * Receives the response from ESB and send it to originator.
+ * @author anumeha.srivastava
+ *
+ */
 public class HandshakeServer {
 
 	private static final Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
@@ -117,6 +122,7 @@ public class HandshakeServer {
 			private void performTransaction(BufferedInputStream socketInput, BufferedOutputStream socketOutput)
 					throws IOException, InterruptedException {
 				String headerIn;
+				String siSegment;
 				String methodName = "performTransaction";
 				String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 
@@ -125,7 +131,9 @@ public class HandshakeServer {
 				if (socketInput.available() > 0) {
 					byte[] message = new byte[44];
 					socketInput.read(message);
-					String siSegment = extractData(message);
+					
+					util.unScrambleData(message, decodeSeed);				
+					siSegment = logInputData(message);					
 					logger.debug("{} - Received from originator {} byte SI Data Block: {}", methodName, message.length,
 							ret_code);
 					logger.info("{} - Received SI segment: {}", methodName, siSegment);
@@ -139,7 +147,8 @@ public class HandshakeServer {
 				byte[] dtsegment = new byte[12];
 
 				socketInput.read(dtsegment, 0, 12);
-				extractData(dtsegment);
+				util.unScrambleData(dtsegment, decodeSeed);
+				logInputData(dtsegment);
 				int numSocketReadTries = 0;
 				headerIn = new String(dtsegment, StandardCharsets.UTF_8);
 
@@ -188,7 +197,8 @@ public class HandshakeServer {
 					// read dtsegment data
 					byte[] dtMessage = new byte[messageLength];
 					socketInput.read(dtMessage, 0, messageLength);
-					extractData(dtMessage);
+					util.unScrambleData(dtMessage, decodeSeed);
+					logInputData(dtMessage);
 					String HL7IN = new String(dtMessage, StandardCharsets.UTF_8);
 					int indexOfMSG = HL7IN.indexOf(HEADER_INDICATOR);
 
@@ -205,7 +215,8 @@ public class HandshakeServer {
 						hnSecureResponse = (String) producer.requestBody(HL7IN);
 					} catch (Exception e) {
 						ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
-						logger.debug("{} - Failed to send request to remote server:{}", methodName, ret_code);
+						logger.debug("{} - Failed to send request to remote server:{} with the error :{}", methodName, ret_code,e.getMessage());
+						logger.error("{} - Error while sending request to ESB  :{}",e.getMessage());
 						hnSecureResponse = ErrorBuilder
 								.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
 					}
@@ -258,9 +269,13 @@ public class HandshakeServer {
 				logger.debug("{} Ending writing HL7 reponsec back to POS", methodName);
 			}
 
-			private String extractData(byte[] dtsegment) {
-				util.unScrambleData(dtsegment, decodeSeed);
-
+			/**
+			 * This function logs the input data(SI and DT segment)
+			 * @param dtsegment
+			 * @return
+			 */
+			private String logInputData(byte[] dtsegment) {
+			
 				String output1 = new String(dtsegment, StandardCharsets.UTF_8);
 				Scanner s1 = new Scanner(output1);
 
@@ -332,8 +347,8 @@ public class HandshakeServer {
 	 * Receives the handshake segment from the originator and verifies it for
 	 * correctness.
 	 * 
-	 * @param ios                 the input stream
-	 * @param handShakeData       the original handshake data
+	 * @param ios the input stream
+	 * @param handShakeData the original handshake data
 	 * @param clientHandshakeData the client handshake data
 	 * @return HNET_RTRN_SUCCESS /HNET_RTRN_INVALIDPARAMETER /
 	 *         HNET_RTRN_INVALIDFORMATERROR
