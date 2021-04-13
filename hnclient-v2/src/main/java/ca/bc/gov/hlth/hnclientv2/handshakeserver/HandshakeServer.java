@@ -194,9 +194,8 @@ public class HandshakeServer {
 
 					if (indexOfMSG != -1) {
 						// Read whatever is after the MSH segment.
-						String aResponse = HL7IN.substring(indexOfMSG) + "\r";
-						HL7IN = aResponse;
-						logger.debug("{} - HL7 message recived from POS: {}", methodName, aResponse);
+						HL7IN = HL7IN.substring(indexOfMSG) + "\r";
+						logger.debug("{} - HL7 message recived from POS: {}", methodName, HL7IN);
 					}
 
 					// Send received message to server
