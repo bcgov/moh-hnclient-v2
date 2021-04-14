@@ -31,7 +31,7 @@ public class ErrorProcessor implements Processor {
 
 			Set<Integer> keySet = errorCodeByErrorNumber.keySet();
 
-			logger.info("{} - Received http status code is: ", methodName, header);
+			logger.info("{} - Received http status code is: {}", methodName, header);
 			if (keySet.contains(header)) {
 
 				String customError = ErrorBuilder.generateError(header, null);
