@@ -125,7 +125,6 @@ public class HandshakeServer {
 			private void performTransaction(BufferedInputStream socketInput, BufferedOutputStream socketOutput)
 					throws IOException, InterruptedException {
 				String headerIn;
-				String siSegment;
 				String methodName = "performTransaction";
 				String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 
@@ -135,11 +134,11 @@ public class HandshakeServer {
 					byte[] message = new byte[44];
 					socketInput.read(message);
 					
-					util.unScrambleData(message, decodeSeed);				
-					siSegment = logInputData(message);					
+					util.unScrambleData(message, decodeSeed);
+					logInputData(message);					
 					logger.debug("{} - Received from originator {} byte SI Data Block: {}", methodName, message.length,
 							ret_code);
-					logger.info("{} - Received SI segment: {}", methodName, siSegment);
+					logger.info("{} - Received SI segment: {}", methodName, new String(message, StandardCharsets.UTF_8));
 				} else {
 					ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 					logger.debug("{} - Error receiving SI segment from Listener: {}", methodName, ret_code);
@@ -217,9 +216,8 @@ public class HandshakeServer {
 						logger.info("{} - Attempting to send the txn to remote server: {}", methodName, ret_code);
 						hnSecureResponse = (String) producer.requestBody(HL7IN);
 					} catch (Exception e) {
-						ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
-						logger.debug("{} - Failed to send request to remote server:{} with the error :{}", methodName, ret_code,e.getMessage());
 						logger.error("{} - Error while sending request to ESB  :{}",e.getMessage());
+						ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
 						hnSecureResponse = ErrorBuilder
 								.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
 					}
@@ -276,16 +274,15 @@ public class HandshakeServer {
 			 * @param dtsegment
 			 * @return
 			 */
-			private String logInputData(byte[] dtsegment) {
-			
-				String output1 = new String(dtsegment, StandardCharsets.UTF_8);
-				Scanner s1 = new Scanner(output1);
-
-				while (logger.isDebugEnabled() && s1.hasNextLine()) {
-					logger.debug("{} reading extracted data :{}", methodName, s1.nextLine());
+			private void logInputData(byte[] dtsegment) {
+				if(logger.isDebugEnabled() ) {
+					String output1 = new String(dtsegment, StandardCharsets.UTF_8);
+					Scanner s1 = new Scanner(output1);
+					while (s1.hasNextLine()) {
+						logger.debug("{} reading extracted data :{}", methodName, s1.nextLine());
+					}
+					s1.close();
 				}
-				s1.close();
-				return output1;
 			}
 		};
 		Thread serverThread = new Thread(serverTask);
@@ -342,6 +339,7 @@ public class HandshakeServer {
 		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS))
 			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE - 1];
 
+		logger.debug("{} Completed handshake with return code as : {}", methodName, retCode);
 		return retCode;
 	}
 
