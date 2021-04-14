@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import org.apache.camel.ProducerTemplate;
+import org.apache.camel.PropertyInject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,16 @@ import io.netty.util.internal.StringUtil;
 public class HandshakeServer {
 
 	private static final Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
+	
+	
+	@PropertyInject(value = "server-socket")
+    private String serverSocket;
+	
+    @PropertyInject(value = "socket-read-sleep-time")
+    private String socketReadSleepTime;
+
+    @PropertyInject(value = "max-socket-read-tries")
+    private String maxSocketReadTries;
 
 	private static final int XFER_HANDSHAKE_SEED = 0;
 	private static final int XFER_HANDSHAKE_SIZE = 8;
@@ -36,12 +47,18 @@ public class HandshakeServer {
 	public static final String HEADER_INDICATOR = "MSH";
 	// data indicator length
 	private static final int DATA_INDICATOR_LENGTH = 2;
-	// length indicator length
-	private static final int LENGTH_INDICATOR_LENGTH = 12;
+	// Segment length for both DT and SI messages
+	private static final int SEGMENT_LENGTH = 12;
+	// Station Idnetifier length
+	private static final int SI_MESSAGE_LENGTH = 44;	
+
+	//Hand shake segment
+	private static final String HS_SEGMENT ="HS0000000008"; 
+		
 
 	private byte decodeSeed = 0;
 	// DT segments to send to POS
-	private byte[] dataSegmentOut = new byte[12];
+	private byte[] dataSegmentOut = new byte[SEGMENT_LENGTH];
 	private byte[] dataHL7out;
 
 	private static final String TEN_ZEROS = "0000000000";
@@ -65,6 +82,8 @@ public class HandshakeServer {
 	 */
 	public void connectionHandler() {
 		final String methodName = "connectionHandler";
+		
+		//TODO Read these properties from application.properties 
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
 		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
 		final int SERVER_SOCKET = 5555;
@@ -131,7 +150,7 @@ public class HandshakeServer {
 				logger.info("{} - Start performing message transaction: {}", methodName, ret_code);
 				// read SI segment
 				if (socketInput.available() > 0) {
-					byte[] message = new byte[44];
+					byte[] message = new byte[SI_MESSAGE_LENGTH];
 					socketInput.read(message);
 					
 					util.unScrambleData(message, decodeSeed);
@@ -146,16 +165,16 @@ public class HandshakeServer {
 				}
 
 				// read dtsegment header
-				byte[] dtsegment = new byte[12];
+				byte[] dtsegment = new byte[SEGMENT_LENGTH];
 
-				socketInput.read(dtsegment, 0, 12);
+				socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
 				util.unScrambleData(dtsegment, decodeSeed);
 				logInputData(dtsegment);
 				int numSocketReadTries = 0;
 				headerIn = new String(dtsegment, StandardCharsets.UTF_8);
 
 				while (!headerIn.contains(DATA_INDICATOR)) {
-					socketInput.read(dtsegment, 0, 12);
+					socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
 					headerIn = util.unScrambleData(dtsegment, decodeSeed);
 
 					if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
@@ -176,7 +195,7 @@ public class HandshakeServer {
 				// Look for the start of data
 				if (headerIn.contains(DATA_INDICATOR)) {
 					int messageLength = Integer
-							.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, LENGTH_INDICATOR_LENGTH));
+							.parseInt(headerIn.substring(DATA_INDICATOR_LENGTH, SEGMENT_LENGTH));
 
 					numSocketReadTries = 0;
 
@@ -253,9 +272,9 @@ public class HandshakeServer {
 				logger.debug("{} Started writing HL7 reponsec back to POS", methodName);
 				String dtSegment = insertHeader(hnSecureResponse);
 
-				dataSegmentOut = dtSegment.substring(0, 12).getBytes(StandardCharsets.UTF_8);
+				dataSegmentOut = dtSegment.substring(0, SEGMENT_LENGTH).getBytes(StandardCharsets.UTF_8);
 
-				dataHL7out = dtSegment.substring(12).getBytes(StandardCharsets.UTF_8);
+				dataHL7out = dtSegment.substring(SEGMENT_LENGTH).getBytes(StandardCharsets.UTF_8);
 				logger.debug("{} HL7 Response:{}", methodName, new String(dataHL7out));
 
 				// scramble each segment prior to sending it to BufferedOutputStream
@@ -317,7 +336,7 @@ public class HandshakeServer {
 
 		/* Now send the Handshake Segment Header. */
 		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {
-			bos.write("HS0000000008".getBytes(), 0, 12);
+			bos.write(HS_SEGMENT.getBytes(), 0, SEGMENT_LENGTH);
 			bos.flush();
 		}
 
@@ -373,12 +392,12 @@ public class HandshakeServer {
 
 			return retCode;
 		} else {
-			byte[] clientHandshakesegment = new byte[12];
+			byte[] clientHandshakesegment = new byte[SEGMENT_LENGTH];
 
 			// read and verify the handshake header
-			ios.read(clientHandshakesegment, 0, 12);
+			ios.read(clientHandshakesegment, 0, SEGMENT_LENGTH);
 
-			if (!util.compareByteArray(clientHandshakesegment, "HS0000000008".getBytes())) {
+			if (!util.compareByteArray(clientHandshakesegment, HS_SEGMENT.getBytes())) {
 				retCode = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 				logger.debug("{} Handshake header segment are not matched :{}", methodName, retCode);
 				return retCode;
