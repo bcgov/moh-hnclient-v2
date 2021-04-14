@@ -31,24 +31,19 @@ public class ErrorProcessor implements Processor {
 
 			Set<Integer> keySet = errorCodeByErrorNumber.keySet();
 
-			logger.info("{} - Received http status code is: {}", methodName, header);
+			logger.info("{} - Received http status code is: ", methodName, header);
+			String body = null;
 			if (keySet.contains(header)) {
-
-				String customError = ErrorBuilder.generateError(header, null);
-
-				logger.debug("Error is:" + customError);
-				exchange.getIn().setBody(customError);
+				body = ErrorBuilder.generateError(header, null);
+				exchange.getIn().setBody(body);
 			} else if (header == null) {
-
-				String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage("An unknown error has occurred.");
-
-				exchange.getIn().setBody(defaultErrorMessage);
-
+				body = ErrorBuilder.buildDefaultErrorMessage(MessageUtil.UNKNOWN_ERROR);
+				exchange.getIn().setBody(body);
 			}
-
+			logger.debug("{} - Set the body of exchange as {}", methodName, body);
 		} catch (Exception e) {
-			logger.debug("{} - Error occured :{}", methodName, e.getMessage());
-			throw new CamelCustomException("An unknown error has occurred.");
+			logger.error("{} - Error occured :{}", methodName, e.getMessage());
+			throw new CamelCustomException(MessageUtil.UNKNOWN_ERROR);
 		}
 
 	}

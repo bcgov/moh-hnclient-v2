@@ -27,5 +27,7 @@ public class MessageUtil {
 	public static final String UNKNOWN_EXCEPTION = "Unknown exception";
 
 	public static final String INVALID_PARAMETER = "Wrong parameter";
+	
+	public static final String UNKNOWN_ERROR = "An unknown error has occurred.";
 
 }
