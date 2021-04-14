@@ -58,6 +58,11 @@ public class HandshakeServer {
 
 	}
 
+	/**
+	 * This function accepts connection from client , calls handshake method
+	 * and if handshake is successful, performs HL7 transaction
+	 * if Handshake fails then it sends a error response to client
+	 */
 	public void connectionHandler() {
 		final String methodName = "connectionHandler";
 		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
@@ -112,10 +117,8 @@ public class HandshakeServer {
 
 			/**
 			 * Reads client message and sends request to ESB
-			 * 
 			 * @param socketInput
 			 * @param socketOutput
-			 * @return HNET RETURN MESSAGE
 			 * @throws IOException
 			 * @throws InterruptedException
 			 */
@@ -243,7 +246,6 @@ public class HandshakeServer {
 
 			/**
 			 * Writes HL7 response back to POS
-			 * 
 			 * @param socketOutput
 			 * @param hnSecureResponse
 			 * @throws IOException
