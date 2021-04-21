@@ -1,9 +1,10 @@
 package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class HandshakeServerTest {
 	private static byte XFER_HANDSHAKE_SEED = 0;
@@ -33,11 +34,13 @@ public class HandshakeServerTest {
 		assertNotNull(handShakeData);
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void test_scrambleData_returns_exception() {
 		byte[] handShakeData = null;
-
-		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
+		assertThrows(NullPointerException.class, () -> {
+			util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);	
+		});
+		
 	}
 
 	@Test

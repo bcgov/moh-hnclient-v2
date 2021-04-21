@@ -1,10 +1,12 @@
 package ca.bc.gov.hlth.hnclientv2.wrapper;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.apache.camel.CamelExecutionException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.test.junit4.CamelTestSupport;
-import org.junit.Test;
+import org.apache.camel.test.junit5.CamelTestSupport;
+import org.junit.jupiter.api.Test;
 
 public class Base64EncodeTest extends CamelTestSupport {
 

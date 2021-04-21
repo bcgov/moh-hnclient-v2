@@ -6,7 +6,6 @@ public class CamelCustomException extends Exception {
 	
 	public CamelCustomException(String msg) {
 		super(msg);
-		// TODO Auto-generated constructor stub
 	}
     
 }

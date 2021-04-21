@@ -1,6 +1,8 @@
 package ca.bc.gov.hlth.hnclientv2;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * @author Tony.Ma * 
@@ -12,13 +14,17 @@ public class UtilTest {
 	public static String nullValue = null;
 	public static String emptyValue = "";
 	
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void testNull_RequireNonBlank(){
-		Util.requireNonBlank(nullValue,"This is an expected exception!!" );
+		assertThrows(NullPointerException.class, () -> {
+			Util.requireNonBlank(nullValue,"This is an expected exception!!" );
+		});
 	}
 	
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void testEmpty_RequireNonBlank(){
-		Util.requireNonBlank(emptyValue,"This is an expected exception!!" );
+		assertThrows(NullPointerException.class, () -> {
+			Util.requireNonBlank(emptyValue,"This is an expected exception!!" );
+		});
 	}
 }

@@ -3,17 +3,14 @@
  */
 package ca.bc.gov.hlth.hnclientv2.wrapper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import ca.bc.gov.hlth.hnclientv2.wrapper.FHIRJsonMessage;
-import ca.bc.gov.hlth.hnclientv2.wrapper.FHIRJsonUtil;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 
