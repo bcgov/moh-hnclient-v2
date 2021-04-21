@@ -90,7 +90,7 @@ public class Route extends RouteBuilder {
             .process(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .log("Sending to HNSecure")
-            .to("http://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
+            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
             .log("Received response from HNSecure")
             // TODO we might be able to remove this processor and instead just set ?throwExceptionOnFailure=true in which case
             //  on org.apache.camel.common.HttpOperationFailedException will be thrown and could be handled by an onException handler
