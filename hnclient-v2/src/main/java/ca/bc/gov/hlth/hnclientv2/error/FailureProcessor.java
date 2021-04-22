@@ -6,18 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FailureProcessor implements Processor {
+	private static final Logger logger = LoggerFactory.getLogger(FailureProcessor.class);
+
 	private String msg;
 
-	public FailureProcessor() {
-
-	}
+	public FailureProcessor() {}
 	
 	public FailureProcessor(String msg) {
-		this.msg=msg;
-		// TODO Auto-generated constructor stub
+		this.msg = msg;
 	}
-
-	private static final Logger logger = LoggerFactory.getLogger(FailureProcessor.class);
 
 	@Override
 	public void process(Exchange exchange) {

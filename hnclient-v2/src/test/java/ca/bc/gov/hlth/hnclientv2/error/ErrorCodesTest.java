@@ -1,16 +1,13 @@
 package ca.bc.gov.hlth.hnclientv2.error;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-
-import ca.bc.gov.hlth.hnclientv2.error.ErrorCodes;
-
-public class EnumCodesTest {
-
+public class ErrorCodesTest {
 
 	@Test
 	public void testMessage_ErrorCode400() {
@@ -62,11 +59,8 @@ public class EnumCodesTest {
 
 	@Test
 	public void testMessage_ErrorCode503() {
-
 		String retrieveEnumByValue = ErrorCodes.retrieveEnumByValue(503);
-
 		assertEquals(retrieveEnumByValue, "Service Unavailable");
-
 	}
 	
 	@Test
@@ -81,10 +75,11 @@ public class EnumCodesTest {
 		assertEquals(retrieveEnumByValue, "");
 	}
 	
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void testMessage_ErrorCodeNotExist() {
-		String retrieveEnumByValue = ErrorCodes.retrieveEnumByValue(300);
-		assertEquals(retrieveEnumByValue, "");
+		assertThrows(NullPointerException.class, () -> {
+			ErrorCodes.retrieveEnumByValue(300);
+		});
 	}
 
 	@Test

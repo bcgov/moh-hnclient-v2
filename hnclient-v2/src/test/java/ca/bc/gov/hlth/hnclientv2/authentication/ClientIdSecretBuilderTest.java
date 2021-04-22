@@ -1,25 +1,31 @@
 package ca.bc.gov.hlth.hnclientv2.authentication;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
-import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 public class ClientIdSecretBuilderTest {
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newClientIdSecretBuilder_nullClientIdTest() {
         // When I initialize a new ClientIdSecretBuilder with a null client id
         // expect a null pointer
-        ClientAuthenticationBuilder clientAuthenticationBuilder = new ClientIdSecretBuilder(null, "test");
+    	assertThrows(NullPointerException.class, () -> {
+    		new ClientIdSecretBuilder(null, "test");	
+    	});        
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newClientIdSecretBuilder_nullSecretTest() {
         // When I initialize a new ClientIdSecretBuilder without a secret set in the system environment variables
         // expect a null pointer
-        ClientAuthenticationBuilder clientAuthenticationBuilder = new ClientIdSecretBuilder("test", null);
+    	assertThrows(NullPointerException.class, () -> {
+    		new ClientIdSecretBuilder("test", null);
+    	});
     }
 
     @Test

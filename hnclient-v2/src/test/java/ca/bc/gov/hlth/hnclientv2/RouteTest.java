@@ -1,5 +1,8 @@
 package ca.bc.gov.hlth.hnclientv2;
 
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
+
 import org.apache.camel.EndpointInject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Produce;
@@ -7,11 +10,9 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.spi.PropertiesComponent;
-import org.apache.camel.test.junit4.CamelTestSupport;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.mockito.Mockito.*;
+import org.apache.camel.test.junit5.CamelTestSupport;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RouteTest  extends CamelTestSupport {
 
@@ -27,7 +28,7 @@ public class RouteTest  extends CamelTestSupport {
     private MockEndpoint responseEndpoint;
 
 
-    @Before
+    @BeforeEach
     public void configureRoutes() throws Exception {
 
         //Since we're not running from the main we need to set the properties
