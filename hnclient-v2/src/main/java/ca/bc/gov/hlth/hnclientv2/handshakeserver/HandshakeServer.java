@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import org.apache.camel.ProducerTemplate;
-import org.apache.camel.PropertyInject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,18 +26,9 @@ import io.netty.util.internal.StringUtil;
 public class HandshakeServer {
 
 	private static final Logger logger = LoggerFactory.getLogger(HandshakeServer.class);
-	
-	
-	@PropertyInject(value = "server-socket")
-    private String serverSocket;
-	
-    @PropertyInject(value = "socket-read-sleep-time")
-    private String socketReadSleepTime;
-
-    @PropertyInject(value = "max-socket-read-tries")
-    private String maxSocketReadTries;
 
 	private static final int XFER_HANDSHAKE_SEED = 0;
+	
 	private static final int XFER_HANDSHAKE_SIZE = 8;
 
 	// data indicator
@@ -55,7 +45,6 @@ public class HandshakeServer {
 	//Hand shake segment
 	private static final String HS_SEGMENT ="HS0000000008"; 
 		
-
 	private byte decodeSeed = 0;
 	// DT segments to send to POS
 	private byte[] dataSegmentOut = new byte[SEGMENT_LENGTH];
@@ -69,10 +58,21 @@ public class HandshakeServer {
 
 	private static final HandshakeUtil util = new HandshakeUtil();
 
-	public HandshakeServer(ProducerTemplate producer) {
-		this.producer = producer;
-		connectionHandler();
+	/** Port to start the Handshake server on */
+    private Integer serverSocket;
 
+    /** Time in ms to wait between reads */
+    private Integer socketReadSleepTime;
+
+    /** Number of reads to attempt */
+    private Integer maxSocketReadTries;
+
+	public HandshakeServer(ProducerTemplate producer, Integer serverSocket, Integer socketReadSleepTime, Integer maxSocketReadTries) {
+		this.producer = producer;
+		this.serverSocket = serverSocket;
+		this.socketReadSleepTime = socketReadSleepTime;
+		this.maxSocketReadTries = maxSocketReadTries;
+		connectionHandler();
 	}
 
 	/**
@@ -82,12 +82,8 @@ public class HandshakeServer {
 	 */
 	public void connectionHandler() {
 		final String methodName = "connectionHandler";
-		
-		//TODO Read these properties from application.properties 
-		final int SOCKET_READ_SLEEP_TIME = 100; // milliseconds
-		final int MAX_SOCKET_READ_TRIES = 100; // total of 10 seconds
-		final int SERVER_SOCKET = 5555;
 
+		// Run the ServerSocket in it's own Thread so that it's not blocking the rest of the Camel
 		Runnable serverTask = new Runnable() {
 			/**
 			 *
@@ -96,10 +92,12 @@ public class HandshakeServer {
 			public void run() {
 				ServerSocket mysocket;
 				try {
-					mysocket = new ServerSocket(SERVER_SOCKET);
+					mysocket = new ServerSocket(serverSocket);
 					while (true) {
 						Socket connectionSocket = mysocket.accept();
 
+						// TODO (weskubo-cgi) Each connection needs to be handled by a new Thread in order for the server to be Multithreaded
+						
 						logger.info("{} - Accepting connection attempt from IP Address: {}", methodName,
 								connectionSocket.getInetAddress().getCanonicalHostName());
 
@@ -109,7 +107,7 @@ public class HandshakeServer {
 								connectionSocket.getOutputStream());
 
 						logger.info("{}- Started thread to handle HL7Xfer connection on socket: {}", methodName,
-								SERVER_SOCKET);
+								serverSocket);
 
 						String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 
@@ -177,11 +175,11 @@ public class HandshakeServer {
 					socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
 					headerIn = util.unScrambleData(dtsegment, decodeSeed);
 
-					if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+					if (numSocketReadTries < maxSocketReadTries) {
 						numSocketReadTries++;
 						// Give other packets a chance to arrive and
 						// avoid trying to monopolize CPU time..
-						Thread.sleep(SOCKET_READ_SLEEP_TIME);
+						Thread.sleep(socketReadSleepTime);
 					} else {
 						// Give up eventually.
 						logger.debug("{} Error receiving DT segment from Listener: {}", methodName, ret_code);
@@ -200,11 +198,11 @@ public class HandshakeServer {
 					numSocketReadTries = 0;
 
 					while (socketInput.available() < messageLength) {
-						if (numSocketReadTries < MAX_SOCKET_READ_TRIES) {
+						if (numSocketReadTries < maxSocketReadTries) {
 							numSocketReadTries++;
 							// Give other packets a chance to arrive and
 							// avoid trying to monopolize CPU time..
-							Thread.sleep(SOCKET_READ_SLEEP_TIME);
+							Thread.sleep(socketReadSleepTime);
 						} else {
 							// Give up eventually.
 							ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;

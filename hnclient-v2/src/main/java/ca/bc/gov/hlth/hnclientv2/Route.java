@@ -28,18 +28,26 @@ import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 public class Route extends RouteBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(Route.class);
+   
+    private static final String keystorePassword = System.getenv("MOH_HNCLIENT_KEYSTORE_PASSWORD");
+    
+    private static final String clientSecret = System.getenv("MOH_HNCLIENT_SECRET");
+    
+    private static final String CLIENT_AUTH_TYPE_CLIENT_ID_SECRET = "CLIENT_ID_SECRET";
+    
+    private static final String CLIENT_AUTH_TYPE_SIGNED_JWT = "SIGNED_JWT";
 
     @PropertyInject(value = "token-endpoint")
-    String tokenEndpoint;
+    private String tokenEndpoint;
 
     @PropertyInject(value = "client-id")
-    String clientId;
+    private String clientId;
 
     @PropertyInject(value = "scopes")
-    String scopes;
+    private String scopes;
 
     @PropertyInject(value = "client-auth-type")
-    String clientAuthType;
+    private String clientAuthType;
 
     @PropertyInject(value = "jks-file")
     private String jksFilePath;
@@ -52,11 +60,21 @@ public class Route extends RouteBuilder {
 
     @PropertyInject(value = "cert-upload-endpoint")
     private String cerUploadEndpoint;
+    
+	@PropertyInject(defaultValue = "5555", value = "server-socket")
+    private Integer serverSocket;
+	
+    @PropertyInject(defaultValue = "100", value = "socket-read-sleep-time")
+    private Integer socketReadSleepTime;
+
+    @PropertyInject(defaultValue = "100", value = "max-socket-read-tries")
+    private Integer maxSocketReadTries;
+
+    @PropertyInject(defaultValue = "30", value = "days-before-expiry-to-renew")
+    private Integer daysBeforeExpiryToRenew;
 
     @EndpointInject("direct:start")
-    ProducerTemplate producer;
-
-    private static final String keystorePassword = System.getenv("MOH_HNCLIENT_KEYSTORE_PASSWORD");
+    private ProducerTemplate producer;
 
     private RetrieveAccessToken retrieveAccessToken;
 
@@ -100,10 +118,11 @@ public class Route extends RouteBuilder {
     }
 
     // This makes it easier to test the route and keeps some of this initialization code separate from the route config
-    // TODO ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
-    //  to call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
+    // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
+    // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-        HandshakeServer handshakeServer = new HandshakeServer(producer);
+        @SuppressWarnings("unused")
+		HandshakeServer handshakeServer = new HandshakeServer(producer, serverSocket, socketReadSleepTime, maxSocketReadTries);
 
         ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
@@ -113,10 +132,10 @@ public class Route extends RouteBuilder {
     }
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {
-        if (clientAuthType.equals("SIGNED_JWT")) {
+        if (clientAuthType.equals(CLIENT_AUTH_TYPE_SIGNED_JWT)) {
             return new SignedJwtBuilder(new File(jksFilePath), keyAlias, tokenEndpoint, keystorePassword);
-        } else if (clientAuthType.equals("CLIENT_ID_SECRET")) {
-            return new ClientIdSecretBuilder(clientId, System.getenv("MOH_HNCLIENT_SECRET"));
+        } else if (clientAuthType.equals(CLIENT_AUTH_TYPE_CLIENT_ID_SECRET)) {
+            return new ClientIdSecretBuilder(clientId, clientSecret);
         } else {
             throw new IllegalStateException(String.format("Unrecognized client authentication type: '%s'", clientAuthType));
         }
@@ -125,17 +144,15 @@ public class Route extends RouteBuilder {
     private void renewKeys() throws Exception {
         // Check the existing keys to see if they should be renewed
         File jksFile = new File(jksFilePath);
-        // TODO this might need to be configurable
-        int daysBeforeExpiryToRenew = 30;
 
         KeyStore keystore = KeystoreTools.loadKeyStore(jksFile, keystorePassword, "jks");
         LocalDate certExpiry = KeystoreTools.getKeystoreExpiry(keystore, keyAlias);
         LocalDate dateRangeToRenewCert = LocalDate.now().plusDays(daysBeforeExpiryToRenew);
         if (!certExpiry.isBefore(dateRangeToRenewCert)) {
-            logger.info("Certificates do not expire before " + dateRangeToRenewCert + ". Certificates will not be renewed");
+            logger.info("Certificates do not expire before {}. Certificates will not be renewed", dateRangeToRenewCert);
         } else {
             //This may actually need a different instance of RetrieveAccessToken with different scopes
-            logger.info("Certificates expire before " + dateRangeToRenewCert + ". Certificates will be renewed");
+            logger.info("Certificates expire before {}. Certificates will be renewed", dateRangeToRenewCert);
             RenewKeys.renewKeys(retrieveAccessToken.getToken(), 1, keyAlias, jksFilePath, cerFilePath, cerUploadEndpoint, keystorePassword);
 
             //Reset the client auth builder with the new cert
