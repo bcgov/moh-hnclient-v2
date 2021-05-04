@@ -11,8 +11,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author anumeha.srivastava
- *
+ * 
  */
+@Deprecated(forRemoval = true)
 public class ErrorProcessor implements Processor {
 	private static final Logger logger = LoggerFactory.getLogger(ErrorProcessor.class);
 	Map<Integer, ErrorCodes> errorCodeByErrorNumber = ErrorCodes.errorCodeByErrorNumber;

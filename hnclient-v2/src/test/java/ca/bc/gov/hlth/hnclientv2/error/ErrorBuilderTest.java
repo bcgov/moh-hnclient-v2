@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
 import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 
+@Deprecated
 public class ErrorBuilderTest extends CamelTestSupport {
 
 	private final String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
@@ -23,7 +24,7 @@ public class ErrorBuilderTest extends CamelTestSupport {
 			public void configure() {
 				from("direct:sampleInput")
 						.setBody().method(new Base64Encoder())
-						.process(new ProcessV2ToJson()).id("ProcessV2ToJson")
+						.setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
 						.process(new ErrorProcessor())
 						.to("mock:output");
 			}

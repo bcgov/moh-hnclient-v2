@@ -185,7 +185,7 @@ public class HandshakeServer {
 						logger.debug("{} Error receiving DT segment from Listener: {}", methodName, ret_code);
 						ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 						hnSecureResponse = ErrorBuilder
-								.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
+								.buildDefaultErrorMessage(MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 					}
 
 				}
@@ -236,20 +236,20 @@ public class HandshakeServer {
 						logger.error("{} - Error while sending request to ESB  :{}",e.getMessage());
 						ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
 						hnSecureResponse = ErrorBuilder
-								.buildHTTPErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable, null);
+								.buildHTTPErrorMessage(MessageUtil.HL7_ERROR_MSG_SERVER_UNAVAILABLE, null);
 					}
 
 				} else {
 					logger.debug("{} - Error recieving DT segment: {}", methodName,
-							MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
+							MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 					hnSecureResponse = ErrorBuilder
-							.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ErrorDTHeaderToHNClient);
+							.buildDefaultErrorMessage(MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 				}
 
 				// Write Response back to POS
 				if (StringUtil.isNullOrEmpty(hnSecureResponse)) {
 					hnSecureResponse = ErrorBuilder
-							.buildDefaultErrorMessage(MessageUtil.HL7Error_Msg_ServerUnavailable);
+							.buildDefaultErrorMessage(MessageUtil.HL7_ERROR_MSG_SERVER_UNAVAILABLE);
 				}
 				sendResponse(socketOutput, hnSecureResponse);
 

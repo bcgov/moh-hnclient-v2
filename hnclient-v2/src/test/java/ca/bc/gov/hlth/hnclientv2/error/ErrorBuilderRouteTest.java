@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
 import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 
+@Deprecated
 public class ErrorBuilderRouteTest extends CamelTestSupport {
 
 	private String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
@@ -25,9 +26,13 @@ public class ErrorBuilderRouteTest extends CamelTestSupport {
 
 			@Override
 			public void configure() throws Exception {
-				from("direct:sampleInput").setBody().method(new Base64Encoder()).process(new ProcessV2ToJson())
-						.id("ProcessV2ToJson").log("v2Message encoded to Base64 format").log("Sending to HNSecure")
-						.process(new ErrorProcessor()).to("mock:output");
+				from("direct:sampleInput")
+				.setBody().method(new Base64Encoder())
+				.setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
+				.log("v2Message encoded to Base64 format")
+				.log("Sending to HNSecure")
+				.process(new ErrorProcessor())
+				.to("mock:output");
 			}
 		};
 	}

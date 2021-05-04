@@ -14,13 +14,13 @@ public class MessageUtil {
 
 	public static final String HNET_RTRN_ENCRYPTIONERROR = "HNET_RTRN_ENCRYPTIONERROR";
 
-	public static final String HL7Error_Msg_MSHSegmentMissing = "The MSH Segment from the HL7 Message is missing.";
+	public static final String HL7_ERROR_MSG_MSH_SEGMENT_MISSING = "The MSH Segment from the HL7 Message is missing.";
 
-	public static final String HL7Error_Msg_ErrorDTHeaderToHNClient = "Unable to send the DT Header to HNCLIENT.";
+	public static final String HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT = "Unable to send the DT Header to HNCLIENT.";
 
-	public static final String HL7Error_Msg_NoInputHL7 = "No HL7 Message was supplied as input";
+	public static final String HL7_ERROR_MSG_NO_INPUT_HL7 = "No HL7 Message was supplied as input";
 
-	public static final String HL7Error_Msg_ServerUnavailable = "Protocol error: received an unexpected data segment from HL7Xfer Server.";
+	public static final String HL7_ERROR_MSG_SERVER_UNAVAILABLE = "Protocol error: received an unexpected data segment from HL7Xfer Server.";
 
 	public static final String SERVER_NO_CONNECTION = "Failed to connect remote server";
 

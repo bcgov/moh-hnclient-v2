@@ -4,7 +4,11 @@ public class ServerNoConnectionException extends CamelCustomException {
 
 	private static final long serialVersionUID = 1L;
 
+	public ServerNoConnectionException() {
+		super();
+	}
+
 	public ServerNoConnectionException(String msg) {
-        super(msg);
-    }
+		super(msg);
+	}
 }

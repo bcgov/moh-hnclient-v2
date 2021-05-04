@@ -4,21 +4,21 @@ import java.io.File;
 import java.security.KeyStore;
 import java.time.LocalDate;
 
-import ca.bc.gov.hlth.hnclientv2.authentication.RetrieveAccessToken;
-import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
 import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.http.base.HttpOperationFailedException;
+import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
-import ca.bc.gov.hlth.hnclientv2.error.ErrorProcessor;
-import ca.bc.gov.hlth.hnclientv2.error.FailureProcessor;
 import ca.bc.gov.hlth.hnclientv2.authentication.ClientAuthenticationBuilder;
 import ca.bc.gov.hlth.hnclientv2.authentication.ClientIdSecretBuilder;
+import ca.bc.gov.hlth.hnclientv2.authentication.RetrieveAccessToken;
 import ca.bc.gov.hlth.hnclientv2.authentication.SignedJwtBuilder;
+import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
+import ca.bc.gov.hlth.hnclientv2.error.FailureProcessor;
 import ca.bc.gov.hlth.hnclientv2.handshakeserver.HandshakeServer;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
@@ -43,6 +43,7 @@ public class Route extends RouteBuilder {
     @PropertyInject(value = "client-id")
     private String clientId;
 
+    /** Space-delimited list of requested scopes */
     @PropertyInject(value = "scopes")
     private String scopes;
 
@@ -91,28 +92,27 @@ public class Route extends RouteBuilder {
     public void configure() throws Exception {
         init();
 
-        onException(org.apache.http.conn.HttpHostConnectException.class).process(new FailureProcessor(MessageUtil.SERVER_NO_CONNECTION))
+        onException(HttpHostConnectException.class).process(new FailureProcessor())
+        .log("Recieved body ${body}").handled(true);
+
+        onException(HttpOperationFailedException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
         
-        onException(CamelCustomException.class).process(new FailureProcessor(MessageUtil.UNKNOWN_EXCEPTION))
+        onException(IllegalArgumentException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
-        
-        onException(IllegalArgumentException.class).process(new FailureProcessor(MessageUtil.INVALID_PARAMETER))
+
+        onException(CamelCustomException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
         
         from("direct:start").routeId("hnclient-route")
             .log("Retrieving access token")
             .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")
-            // TODO we should refactor to standardize on beans or processors
-            .setBody().method(new Base64Encoder())
-            .process(new ProcessV2ToJson()).id("ProcessV2ToJson")
+            .setBody().method(new Base64Encoder()).id("Base64Encoder")
+            .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .log("Sending to HNSecure")
-            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
+            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=true").id("ToHnSecure")
             .log("Received response from HNSecure")
-            // TODO we might be able to remove this processor and instead just set ?throwExceptionOnFailure=true in which case
-            //  on org.apache.camel.common.HttpOperationFailedException will be thrown and could be handled by an onException handler
-            .process(new ErrorProcessor())
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .convertBodyTo(String.class);
     }
