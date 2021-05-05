@@ -137,8 +137,5 @@ public class RenewKeys {
 		}
     	return backupKeyStore;
     }
-    
-    public static void main(String[] args) {
-    	backupKeyStore("C:\\Dev\\keystore\\moh_hnclient_dev.jks");
-    }
+
 }
