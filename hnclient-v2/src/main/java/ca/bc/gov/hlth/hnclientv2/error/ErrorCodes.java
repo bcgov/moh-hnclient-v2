@@ -3,9 +3,8 @@ package ca.bc.gov.hlth.hnclientv2.error;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated(forRemoval = true)
 public enum ErrorCodes {
-
-	// TODO: Verify error codes with Patrick
 	
 	BAD_REQUEST(400,"Bad Request"),
 	UNAUTHORIZED(401,"Unauthorized"),
@@ -55,6 +54,7 @@ public enum ErrorCodes {
 			return "";
 		ErrorCodes businessError = ErrorCodes.getErrorCodeByNumber(errorCode);
 		return businessError.getErrorMessage();
+		//return EnglishReasonPhraseCatalog.INSTANCE.getReason(errorCode, Locale.getDefault());
 	}
 
 }

@@ -1,22 +1,34 @@
 package ca.bc.gov.hlth.hnclientv2.authentication;
 
-import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
-import ca.bc.gov.hlth.hnclientv2.error.ServerNoConnectionException;
-import com.nimbusds.oauth2.sdk.*;
-import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.nimbusds.oauth2.sdk.AccessTokenResponse;
+import com.nimbusds.oauth2.sdk.AuthorizationGrant;
+import com.nimbusds.oauth2.sdk.ClientCredentialsGrant;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.Scope;
+import com.nimbusds.oauth2.sdk.TokenErrorResponse;
+import com.nimbusds.oauth2.sdk.TokenRequest;
+import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+
+import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
+import ca.bc.gov.hlth.hnclientv2.error.ServerNoConnectionException;
+import io.netty.util.internal.StringUtil;
+
 public class RetrieveAccessToken {
 
-    private static Logger logger = LoggerFactory.getLogger(RetrieveAccessToken.class);
+    private static final Logger logger = LoggerFactory.getLogger(RetrieveAccessToken.class);
+    
+    private static final Long ONE_MINUTE_IN_MILLIS = 60_000L;
 
     private URI tokenEndpointUri;
     private Scope requiredScopes;
@@ -25,19 +37,21 @@ public class RetrieveAccessToken {
     private AccessToken accessToken;
     private long tokenExpiryTime;
 
-    public RetrieveAccessToken(String tokenEndpoint, String scope, ClientAuthenticationBuilder clientAuthBuilder) throws URISyntaxException {
-
-        //TODO this accepts a string array or multiple strings - will need to update to allow multiple scopes
-        this.requiredScopes = new Scope(scope);
+    public RetrieveAccessToken(String tokenEndpoint, String scopes, ClientAuthenticationBuilder clientAuthBuilder) throws URISyntaxException {
+    	if (!StringUtil.isNullOrEmpty(scopes)) {
+            this.requiredScopes = new Scope(scopes.split(" "));	
+    	} else {
+    		this.requiredScopes = new Scope();
+    	}
         this.tokenEndpointUri = new URI(tokenEndpoint);
         this.clientAuthBuilder = clientAuthBuilder;
         Objects.requireNonNull(this.clientAuthBuilder, "Requires client authentication.");
     }
-
+   
     public synchronized String getToken() throws CamelCustomException {
 
         // Reuse the token if the expiry time is more than a minute away
-        if (Instant.now().toEpochMilli() + 60_000 < tokenExpiryTime) {
+        if (Instant.now().toEpochMilli() + ONE_MINUTE_IN_MILLIS < tokenExpiryTime) {
             logger.info("Using existing access token");
             logger.debug("Access token: {}", accessToken.toJSONString());
             return accessToken.toAuthorizationHeader();
@@ -56,14 +70,12 @@ public class RetrieveAccessToken {
         try {
             response = TokenResponse.parse(request.toHTTPRequest().send());
         } catch (ParseException | IOException exception) {
-            // TODO this should probably be some kind of http exception that generates the MessageUtil.SERVER_NO_CONNECTION error
             throw new ServerNoConnectionException(exception.getMessage());
         }
 
         // Check if we got a 2xx response back from the server
         if (!response.indicatesSuccess()) {
             TokenErrorResponse errorResponse = response.toErrorResponse();
-            // TODO this should probably be some kind of http exception that generates the MessageUtil.SERVER_NO_CONNECTION error
             throw new ServerNoConnectionException(errorResponse.toJSONObject().toString());
         }
 

@@ -24,6 +24,7 @@ public class ErrorBuilder {
 
 	private static String recievingFacility;
 
+	@Deprecated
 	public static String generateError(Integer errorCode, String v2Msg) {
 
 		String errCode = ErrorCodes.retrieveEnumByValue(errorCode);

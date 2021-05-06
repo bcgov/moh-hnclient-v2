@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+@Deprecated
 public class ErrorCodesTest {
 
 	@Test

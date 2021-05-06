@@ -8,7 +8,9 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.junit.jupiter.api.Test;
 
-public class Base64EncodeTest extends CamelTestSupport {
+import ca.bc.gov.hlth.hnclientv2.error.NoInputHL7Exception;
+
+public class Base64EncoderTest extends CamelTestSupport {
 
     private final String v2Msg = "00000352MSH|^~\\&|HNWEB|VIHA|RAIGT-PRSN-DMGR|BC00001013|20170125122125|train96|R03|20170125122125|D|2.4||\n"
             + "ZHD|20170125122125|^^00000010|HNAIADMINISTRATION||||2.4\n"
@@ -55,7 +57,7 @@ public class Base64EncodeTest extends CamelTestSupport {
             // We expect an illegal argument exception
             // Because we have no exception handling in our simple test route camel throws
             // the IllegalArgumentException upwards as a CamelExecutionException so we check the cause
-            assertTrue(e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause() instanceof NoInputHL7Exception);
         }
     }
 
@@ -68,7 +70,7 @@ public class Base64EncodeTest extends CamelTestSupport {
             // We expect an illegal argument exception
             // Because we have no exception handling in our simple test route camel throws
             // the IllegalArgumentException upwards as a CamelExecutionException so we check the cause
-            assertTrue(e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause() instanceof NoInputHL7Exception);
         }
     }
 

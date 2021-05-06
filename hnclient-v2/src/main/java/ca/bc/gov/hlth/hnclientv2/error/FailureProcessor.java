@@ -2,33 +2,43 @@ package ca.bc.gov.hlth.hnclientv2.error;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.apache.camel.http.base.HttpOperationFailedException;
+import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FailureProcessor implements Processor {
+
 	private static final Logger logger = LoggerFactory.getLogger(FailureProcessor.class);
-
-	private String msg;
-
-	public FailureProcessor() {}
-	
-	public FailureProcessor(String msg) {
-		this.msg = msg;
-	}
 
 	@Override
 	public void process(Exchange exchange) {
-		logger.debug("Failure Processor is called");
+		logger.debug("process: Failure Processor is called");
+		
+		Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+		String msg = MessageUtil.UNKNOWN_EXCEPTION;
 
-		// The message was caused by caused by a failure to connect to a downstream service and should give a SERVER_NO_CONNECTION error
-		// TODO Pick a single way to determine error type this could be moved to login in onException in the Route
-		//  the thinking here was to have a set of subclasses of a CamelCustomException and handle the different error message types here
-		//  Rather than with a bunch of onException methods in the route
-		if (exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class) instanceof ServerNoConnectionException) {
+		if (exception instanceof IllegalArgumentException) {
+			msg = MessageUtil.INVALID_PARAMETER;
+		} else if (exception instanceof HttpHostConnectException) {
 			msg = MessageUtil.SERVER_NO_CONNECTION;
+		} else if (exception instanceof HttpOperationFailedException) {
+			HttpOperationFailedException hofe = (HttpOperationFailedException)exception;
+			// TODO (weskubo-cgi) It may be necessary to just send a generic code to the POS
+			msg = hofe.getStatusText();
+		} else if (exception instanceof NoInputHL7Exception) {
+			msg = MessageUtil.HL7_ERROR_MSG_NO_INPUT_HL7;
+		} else if (exception instanceof ServerNoConnectionException) {
+			// The message was caused by caused by a failure to connect to a downstream service and should give a SERVER_NO_CONNECTION error
+			msg = MessageUtil.SERVER_NO_CONNECTION;
+		} else if (exception instanceof CamelCustomException) {
+			msg = MessageUtil.UNKNOWN_EXCEPTION;
 		}
+		
+		logger.error("Processing Exception of type {} with message {}", exception.getClass().getName(), msg);
+		
 		// Give the default error
-		String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage(this.msg);
+		String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage(msg);
 		exchange.getIn().setBody(defaultErrorMessage);
 	}
 }
