@@ -5,11 +5,11 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import org.apache.camel.ProducerTemplate;
+import org.apache.camel.RuntimeCamelException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +39,10 @@ public class HandshakeServer {
 	private static final int DATA_INDICATOR_LENGTH = 2;
 	// Segment length for both DT and SI messages
 	private static final int SEGMENT_LENGTH = 12;
-	// Station Idnetifier length
+	// Station Identifier length
 	private static final int SI_MESSAGE_LENGTH = 44;	
 
-	//Hand shake segment
+	// Hand shake segment
 	private static final String HS_SEGMENT ="HS0000000008"; 
 		
 	private byte decodeSeed = 0;
@@ -90,44 +90,85 @@ public class HandshakeServer {
 			 */
 			@Override
 			public void run() {
-				ServerSocket mysocket;
-				try {
+				ServerSocket mysocket = null;
+				try {					
 					mysocket = new ServerSocket(serverSocket);
+					
+					String ret_code = null;
+					BufferedInputStream socketInput = null;
+					BufferedOutputStream socketOutput = null;
 					while (true) {
-						Socket connectionSocket = mysocket.accept();
-
-						// TODO (weskubo-cgi) Each connection needs to be handled by a new Thread in order for the server to be Multithreaded
-						
-						logger.info("{} - Accepting connection attempt from IP Address: {}", methodName,
-								connectionSocket.getInetAddress().getCanonicalHostName());
-
-						BufferedInputStream socketInput = new BufferedInputStream(connectionSocket.getInputStream(),
-								1000);
-						BufferedOutputStream socketOutput = new BufferedOutputStream(
-								connectionSocket.getOutputStream());
-
-						logger.info("{}- Started thread to handle HL7Xfer connection on socket: {}", methodName,
-								serverSocket);
-
-						String ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
-
-						if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
-							performTransaction(socketInput, socketOutput);
-
-						} else {
-							logger.info("{} - Handshake failed: {} {}", methodName, ret_code, System.lineSeparator());
+						try {
+							Socket connectionSocket = mysocket.accept();
+	
+							// TODO (weskubo-cgi) Each connection needs to be handled by a new Thread in order for the server to be Multithreaded
+							
+							logger.info("{} - Accepting connection attempt from IP Address: {}", methodName,
+									connectionSocket.getInetAddress().getCanonicalHostName());
+	
+							socketInput = new BufferedInputStream(connectionSocket.getInputStream(), 1000);
+							socketOutput = new BufferedOutputStream(connectionSocket.getOutputStream());
+	
+							logger.info("{} - Started thread to handle HL7Xfer connection on socket: {}", methodName,
+									serverSocket);
+	
+							ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
+	
+							if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
+								performTransaction(socketInput, socketOutput);
+	
+							} else {
+								logger.info("{} - Handshake failed: {} {}", methodName, ret_code, System.lineSeparator());
+								hnSecureResponse = ErrorBuilder.buildDefaultErrorMessage(ret_code);
+								sendResponse(socketOutput, hnSecureResponse);
+								// reset decodeseed
+								decodeSeed = 0;
+							}
+						} catch (Exception e) {
+							logger.info("{} - Message processing failed: {} {}", methodName, ret_code, System.lineSeparator());							
+							
+							// Depending on when the handshake process fails the ret_code might actually return HNET_RTRN_SUCCESS
+							// If this is the case use a HNET_RTRN_INVALIDFORMATERROR instead as it is likely a formatting error
+							if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
+								ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
+							}
 							hnSecureResponse = ErrorBuilder.buildDefaultErrorMessage(ret_code);
-							sendResponse(socketOutput, hnSecureResponse);
+							try {
+								sendResponse(socketOutput, hnSecureResponse);
+							} catch (IOException ioe) {
+								logger.error(ioe.getMessage());
+							}
 							// reset decodeseed
 							decodeSeed = 0;
+							logger.error(e.getMessage());
+						} finally {
+							if (socketInput != null) {
+								try {
+									socketInput.close();
+								} catch (IOException e) {
+									logger.error(e.getMessage());
+								}
+							}
+							if (socketOutput != null) {
+								try {
+									socketOutput.close();
+								} catch (IOException e) {
+									logger.error(e.getMessage());
+								}
+							}
 						}
 					}
-				} catch (SocketException e) {
-					logger.error(e.getMessage());
-				} catch (IOException e) {
-					logger.error(e.getMessage());
-				} catch (InterruptedException e) {
-					logger.error(e.getMessage());
+				} catch (IOException ioe) {
+					logger.error("{} - Could not start ServerSocket on {}. Error: {}", methodName, serverSocket, ioe.getMessage());
+					throw new RuntimeCamelException("Could not start HandshakeServer", ioe);
+				} finally {
+					if (mysocket != null) {
+						try {
+							mysocket.close();
+						} catch (IOException e) {
+							logger.warn("ServerSocket could not be closed");
+						}
+					}
 				}
 
 			}
@@ -303,8 +344,20 @@ public class HandshakeServer {
 			}
 		};
 		Thread serverThread = new Thread(serverTask);
-		serverThread.start();
 
+		Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+			
+		    @Override
+		    public void uncaughtException(Thread th, Throwable ex) {
+		    	// XXX We don't want to end up here as this means the error was not caught
+		    	// and we have no good way to recover from it.
+		    	logger.error("Unhandled exception {} in thread {}", ex.getMessage(), th.getId());
+		    }
+		};
+		
+		serverThread.setUncaughtExceptionHandler(handler);
+		
+		serverThread.start();
 	}
 
 	/*----------------------------------------------------------------------------
