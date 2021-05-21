@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.bc.gov.hlth.hnclientv2.error.NoInputHL7Exception;
+import ca.bc.gov.hlth.hncommon.json.fhir.FHIRJsonUtil;
 import io.netty.util.internal.StringUtil;
 
 public class ProcessV2ToJson {
