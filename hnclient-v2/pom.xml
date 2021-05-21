@@ -15,6 +15,20 @@
     <log4j2-version>2.13.3</log4j2-version>
   </properties>
 
+	<repositories>
+		<repository>
+			<id>cgi-mvn-release</id>
+			<name>CGI Maven Repository</name>
+			<url>https://artifactory.hlth.gov.bc.ca/artifactory/cgi-mvn-release</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+      		<snapshots>
+      			<enabled>true</enabled>
+      		</snapshots>
+		</repository>
+	</repositories>
+
   <dependencyManagement>
     <dependencies>
       <!-- Camel BOM -->
