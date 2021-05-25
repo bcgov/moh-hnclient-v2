@@ -8,8 +8,8 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.junit.jupiter.api.Test;
 
-import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
-import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
+import ca.bc.gov.hlth.hnclientv2.handler.Base64Encoder;
+import ca.bc.gov.hlth.hnclientv2.handler.ProcessV2ToJson;
 
 @Deprecated
 public class ErrorBuilderTest extends CamelTestSupport {
