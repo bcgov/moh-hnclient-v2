@@ -1,4 +1,4 @@
-package ca.bc.gov.hlth.hnclientv2.wrapper;
+package ca.bc.gov.hlth.hnclientv2.handler;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

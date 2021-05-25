@@ -19,11 +19,12 @@ import ca.bc.gov.hlth.hnclientv2.authentication.RetrieveAccessToken;
 import ca.bc.gov.hlth.hnclientv2.authentication.SignedJwtBuilder;
 import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
 import ca.bc.gov.hlth.hnclientv2.error.FailureProcessor;
+import ca.bc.gov.hlth.hnclientv2.handler.Base64Encoder;
+import ca.bc.gov.hlth.hnclientv2.handler.FhirPayloadExtractor;
+import ca.bc.gov.hlth.hnclientv2.handler.ProcessV2ToJson;
 import ca.bc.gov.hlth.hnclientv2.handshakeserver.HandshakeServer;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
-import ca.bc.gov.hlth.hnclientv2.wrapper.Base64Encoder;
-import ca.bc.gov.hlth.hnclientv2.wrapper.ProcessV2ToJson;
 
 public class Route extends RouteBuilder {
 
@@ -114,6 +115,7 @@ public class Route extends RouteBuilder {
             .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=true").id("ToHnSecure")
             .log("Received response from HNSecure")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+            .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")
             .convertBodyTo(String.class);
     }
 
