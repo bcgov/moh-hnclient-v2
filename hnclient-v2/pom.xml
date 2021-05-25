@@ -178,7 +178,7 @@
         <version>3.4.0</version>
         <configuration>
           <logClasspath>true</logClasspath>
-          <mainClass>ca.bc.gov.hlth.hnclientv2.MainMethod</mainClass>
+          <mainClass>ca.bc.gov.hlth.hnclientv2.HnsClientMainMethod</mainClass>
         </configuration>
       </plugin>
 
