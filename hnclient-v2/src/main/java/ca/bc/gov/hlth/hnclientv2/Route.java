@@ -23,6 +23,7 @@ import ca.bc.gov.hlth.hnclientv2.handler.Base64Encoder;
 import ca.bc.gov.hlth.hnclientv2.handler.FhirPayloadExtractor;
 import ca.bc.gov.hlth.hnclientv2.handler.ProcessV2ToJson;
 import ca.bc.gov.hlth.hnclientv2.handshakeserver.HandshakeServer;
+import ca.bc.gov.hlth.hnclientv2.handshakeserver.ServerProperties;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
 
@@ -72,6 +73,9 @@ public class Route extends RouteBuilder {
     @PropertyInject(defaultValue = "100", value = "max-socket-read-tries")
     private Integer maxSocketReadTries;
 
+    @PropertyInject(defaultValue = "1", value = "thread-pool-size")
+    private Integer threadPoolSize;
+    
     @PropertyInject(defaultValue = "30", value = "days-before-expiry-to-renew")
     private Integer daysBeforeExpiryToRenew;
 
@@ -123,8 +127,8 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-        @SuppressWarnings("unused")
-		HandshakeServer handshakeServer = new HandshakeServer(producer, serverSocket, socketReadSleepTime, maxSocketReadTries);
+        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize);
+		new HandshakeServer(producer, properties);
 
         ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
