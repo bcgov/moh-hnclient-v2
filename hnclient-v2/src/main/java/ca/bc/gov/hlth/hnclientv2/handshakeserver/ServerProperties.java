@@ -11,7 +11,6 @@ public class ServerProperties {
 	private Integer threadPoolSize;
 
 	public ServerProperties(Integer serverSocket, Integer socketReadSleepTime, Integer maxSocketReadTries, Integer threadPoolSize) {
-		super();
 		this.serverSocket = serverSocket;
 		this.socketReadSleepTime = socketReadSleepTime;
 		this.maxSocketReadTries = maxSocketReadTries;
