@@ -19,11 +19,11 @@ import net.minidev.json.parser.ParseException;
 public class FhirPayloadExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(FhirPayloadExtractor.class);
-    private static final JSONParser jsonParser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
 
     @Handler
     public static String extractFhirPayload(Exchange exchange,String fhirMessage) throws ParseException, UnsupportedEncodingException, CamelCustomException {
 
+    	JSONParser jsonParser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
         JSONObject fhirMessageJSON = (JSONObject) jsonParser.parse(fhirMessage);
         
         FHIRJsonMessage encodedExtractedMessage = FHIRJsonUtil.parseJson2FHIRMsg(fhirMessageJSON); // get the data property
@@ -33,7 +33,7 @@ public class FhirPayloadExtractor {
         String extractedMessage;
         try {
         	extractedMessage = StringUtil.decodeBase64(encodedExtractedMessage.getV2MessageData());
-        } catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
         	logger.error("Exception while decoding message ", e);
         	throw new CamelCustomException(e.getMessage());
         }

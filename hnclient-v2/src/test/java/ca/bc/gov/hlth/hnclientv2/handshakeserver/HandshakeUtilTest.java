@@ -6,31 +6,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-public class HandshakeServerTest {
+public class HandshakeUtilTest {
 	private static byte XFER_HANDSHAKE_SEED = 0;
 
 	private static String HNET_RTRN_SUCCESS = "HNET_RTRN_SUCCESS";
 	private static String HNET_RTRN_INVALIDPARAMETER = "HNET_RTRN_INVALIDPARAMETER";
-	private static final HandshakeUtil util = new HandshakeUtil();
 
 	@Test
 	public void test_generateHandshakeData_returns_success() {
 		byte[] handShakeData = new byte[8];
-		String retCode = util.generateHandshakeData(handShakeData);
+		String retCode = HandshakeUtil.generateHandshakeData(handShakeData);
 		assertTrue(retCode.equals(HNET_RTRN_SUCCESS));
 	}
 
 	@Test
 	public void test_generateHandshakeData_returns_invalidparameter() {
 		byte[] handShakeData = null;
-		String retCode = util.generateHandshakeData(handShakeData);
+		String retCode = HandshakeUtil.generateHandshakeData(handShakeData);
 		assertTrue(retCode.equals(HNET_RTRN_INVALIDPARAMETER));
 	}
 
 	@Test
 	public void test_scrambleData_returns_success() {
 		byte[] handShakeData = new byte[8];
-		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
+		HandshakeUtil.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
 		assertNotNull(handShakeData);
 	}
 
@@ -38,7 +37,7 @@ public class HandshakeServerTest {
 	public void test_scrambleData_returns_exception() {
 		byte[] handShakeData = null;
 		assertThrows(NullPointerException.class, () -> {
-			util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);	
+			HandshakeUtil.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);	
 		});
 		
 	}
@@ -48,13 +47,13 @@ public class HandshakeServerTest {
 		byte[] handShakeData = new byte[8];
 		byte[] clientHandshakeData = new byte[8];
 
-		util.generateHandshakeData(handShakeData);
+		HandshakeUtil.generateHandshakeData(handShakeData);
 		clientHandshakeData = "clientdata".getBytes();
 
-		util.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
-		util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
+		HandshakeUtil.scrambleData(handShakeData, XFER_HANDSHAKE_SEED);
+		HandshakeUtil.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
 
-		assertTrue(!util.compareByteArray(clientHandshakeData, handShakeData));
+		assertTrue(!HandshakeUtil.compareByteArray(clientHandshakeData, handShakeData));
 	}
 
 	@Test
@@ -62,12 +61,12 @@ public class HandshakeServerTest {
 		byte[] handShakeData = new byte[8];
 		byte[] clientHandshakeData = new byte[8];
 
-		util.generateHandshakeData(handShakeData);
+		HandshakeUtil.generateHandshakeData(handShakeData);
 		clientHandshakeData = handShakeData;
 
-		util.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
+		HandshakeUtil.scrambleData(clientHandshakeData, XFER_HANDSHAKE_SEED);
 
-		assertTrue(util.compareByteArray(clientHandshakeData, handShakeData));
+		assertTrue(HandshakeUtil.compareByteArray(clientHandshakeData, handShakeData));
 	}
 
 }

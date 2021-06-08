@@ -2,9 +2,14 @@ package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
+import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 
 public class HandshakeUtil {
+	private static final Logger logger = LoggerFactory.getLogger(HandshakeUtil.class);
 
     /**
      * Takes a data buffer and scramble the contents using a simple algorithm
@@ -12,7 +17,7 @@ public class HandshakeUtil {
      * @param aByte The buffer the contents of which are to be scrambled.
      */
 
-    public void scrambleData(byte[] aByte, byte decodeSeed) {
+    public static void scrambleData(byte[] aByte, byte decodeSeed) {
         aByte[0] ^= decodeSeed;
         for (int x = 1; x < aByte.length; x++) {
             aByte[x] ^= aByte[x - 1];
@@ -31,7 +36,7 @@ public class HandshakeUtil {
      * @return scrambled string.
      */
 
-    public  String unScrambleData(byte[] scrambleByte,byte decodeSeed) {
+    public static String unScrambleData(byte[] scrambleByte,byte decodeSeed) {
 
         byte prevByte = scrambleByte[0];
         scrambleByte[0] ^= decodeSeed;
@@ -48,7 +53,7 @@ public class HandshakeUtil {
      * @param originalData the original byte array
      * @return client data and original data are equal or not.
      */
-    public  boolean compareByteArray(byte[] clientData, byte[] originalData) {
+    public static boolean compareByteArray(byte[] clientData, byte[] originalData) {
         if (clientData == originalData) {
             return true;
         }
@@ -76,19 +81,19 @@ public class HandshakeUtil {
 	 * @param handShakeData
 	 * @return
 	 */
-	public String generateHandshakeData(byte[] handShakeData) {
+	public static String generateHandshakeData(byte[] handShakeData) {
 		
 		String ret_code = MessageUtil.HNET_RTRN_SUCCESS;
 
-		if (handShakeData == null)
+		if (handShakeData == null) {
 			ret_code = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
-		else {
+		} else {
 			// create random object
 			Random r = new Random(System.currentTimeMillis());
 			// put the next byte in the array
 			r.nextBytes(handShakeData);
 		}
-		//logger.debug("{} - Generated random byte array {}", methodName, ret_code);
+		logger.trace("{} - Generated random byte array {}", LoggingUtil.getMethodName(), ret_code);
 		return ret_code;
 	}
 }
