@@ -16,29 +16,29 @@ public class FailureProcessor implements Processor {
 		logger.debug("process: Failure Processor is called");
 		
 		Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
-		String msg = MessageUtil.UNKNOWN_EXCEPTION;
+		String errMsg = MessageUtil.UNKNOWN_EXCEPTION;
 
 		if (exception instanceof IllegalArgumentException) {
-			msg = MessageUtil.INVALID_PARAMETER;
+			errMsg = MessageUtil.INVALID_PARAMETER;
 		} else if (exception instanceof HttpHostConnectException) {
-			msg = MessageUtil.SERVER_NO_CONNECTION;
+			errMsg = MessageUtil.SERVER_NO_CONNECTION;
 		} else if (exception instanceof HttpOperationFailedException) {
 			HttpOperationFailedException hofe = (HttpOperationFailedException)exception;
 			// TODO (weskubo-cgi) It may be necessary to just send a generic code to the POS
-			msg = hofe.getStatusText();
+			errMsg = hofe.getStatusText();
 		} else if (exception instanceof NoInputHL7Exception) {
-			msg = MessageUtil.HL7_ERROR_MSG_NO_INPUT_HL7;
+			errMsg = MessageUtil.HL7_ERROR_MSG_NO_INPUT_HL7;
 		} else if (exception instanceof ServerNoConnectionException) {
 			// The message was caused by caused by a failure to connect to a downstream service and should give a SERVER_NO_CONNECTION error
-			msg = MessageUtil.SERVER_NO_CONNECTION;
+			errMsg = MessageUtil.SERVER_NO_CONNECTION;
 		} else if (exception instanceof CamelCustomException) {
-			msg = MessageUtil.UNKNOWN_EXCEPTION;
+			errMsg = MessageUtil.UNKNOWN_EXCEPTION;
 		}
 		
-		logger.error("Processing Exception of type {} with message {}", exception.getClass().getName(), msg);
+		logger.error("Processing Exception of type {} with message {}", exception.getClass().getName(), errMsg);
 		
 		// Give the default error
-		String defaultErrorMessage = ErrorBuilder.buildDefaultErrorMessage(msg);
+		String defaultErrorMessage = ErrorBuilder.buildErrorMessage("", errMsg);
 		exchange.getIn().setBody(defaultErrorMessage);
 	}
 }

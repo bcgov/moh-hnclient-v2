@@ -38,7 +38,7 @@ public class ErrorProcessor implements Processor {
 				body = ErrorBuilder.generateError(header, null);
 				exchange.getIn().setBody(body);
 			} else if (header == null) {
-				body = ErrorBuilder.buildDefaultErrorMessage(MessageUtil.UNKNOWN_ERROR);
+				body = ErrorBuilder.buildErrorMessage((String)exchange.getIn().getBody(), MessageUtil.UNKNOWN_ERROR);
 				exchange.getIn().setBody(body);
 			}
 			logger.debug("{} - Set the body of exchange as {}", methodName, body);

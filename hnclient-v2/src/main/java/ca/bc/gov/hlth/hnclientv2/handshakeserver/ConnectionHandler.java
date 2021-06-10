@@ -88,7 +88,7 @@ public class ConnectionHandler implements Callable<Void> {
 				performTransaction(socketInput, socketOutput);
 			} else {
 				logger.warn("{} - Handshake failed: {} {}", LoggingUtil.getMethodName(), ret_code, System.lineSeparator());
-				hnSecureResponse = ErrorBuilder.buildDefaultErrorMessage(ret_code);
+				hnSecureResponse = ErrorBuilder.buildErrorMessage("",ret_code);
 				sendResponse(socketOutput, hnSecureResponse);
 				// reset decodeseed
 				decodeSeed = 0;
@@ -101,7 +101,7 @@ public class ConnectionHandler implements Callable<Void> {
 			if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
 				ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 			}
-			hnSecureResponse = ErrorBuilder.buildDefaultErrorMessage(ret_code);
+			hnSecureResponse = ErrorBuilder.buildErrorMessage("", ret_code);
 			try {
 				sendResponse(socketOutput, hnSecureResponse);
 			} catch (IOException ioe) {
@@ -220,7 +220,7 @@ public class ConnectionHandler implements Callable<Void> {
 				logger.debug("{} Error receiving DT segment from Listener: {}", methodName, ret_code);
 				ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 				hnSecureResponse = ErrorBuilder
-						.buildDefaultErrorMessage(MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
+						.buildErrorMessage("", MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 			}
 
 		}
@@ -271,20 +271,20 @@ public class ConnectionHandler implements Callable<Void> {
 				logger.error("{} - Error while sending request to ESB  :{}",e.getMessage());
 				ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
 				hnSecureResponse = ErrorBuilder
-						.buildHTTPErrorMessage(MessageUtil.HL7_ERROR_MSG_SERVER_UNAVAILABLE, null);
+						.buildErrorMessage(MessageUtil.HL7_ERROR_MSG_SERVER_UNAVAILABLE, null);
 			}
 
 		} else {
 			logger.debug("{} - Error recieving DT segment: {}", methodName,
 					MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 			hnSecureResponse = ErrorBuilder
-					.buildDefaultErrorMessage(MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
+					.buildErrorMessage("", MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 		}
 
 		// Write Response back to POS
 		if (StringUtil.isNullOrEmpty(hnSecureResponse)) {
 			hnSecureResponse = ErrorBuilder
-					.buildDefaultErrorMessage(MessageUtil.HL7_ERROR_MSG_SERVER_UNAVAILABLE);
+					.buildErrorMessage("", MessageUtil.HL7_ERROR_MSG_SERVER_UNAVAILABLE);
 		}
 		sendResponse(socketOutput, hnSecureResponse);
 
