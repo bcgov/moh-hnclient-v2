@@ -4,6 +4,8 @@ import java.sql.Timestamp;
 
 import org.apache.commons.lang3.StringUtils;
 
+import io.netty.util.internal.StringUtil;
+
 public class ErrorBuilder {
 
 	private static String HL7Error_Default = "MSH|^~\\\\&|UNKNOWNAPP|UNKNOWNCLIENT|HL7ERRORGEN|UNKNOWNFACILITY";
@@ -11,8 +13,6 @@ public class ErrorBuilder {
 	private static String ack= "ACK";
 	
 	private static String msh= "MSH";
-	
-	private static String version = "2.4";
 
 	private static String msa = "MSA|AR|";
 	
@@ -47,10 +47,13 @@ public class ErrorBuilder {
 		return buildMSH(v2Msg) +buildMSA(v2Msg,errMsg);
 	}
 
-	private static String buildMSA(String v2Msg, String errMsg) {		
+	private static String buildMSA(String v2Msg, String errMsg) {
+		if(StringUtil.isNullOrEmpty(v2Msg))
+			v2Msg= HL7Error_Default;
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append(msa);
-		sb.append(getMsgId(v2Msg));
+		sb.append(getMsgId(v2Msg.split(double_backslash+delimiter)));
 		sb.append(delimiter);
 		sb.append(StringUtils.defaultString(errMsg));
 		sb.append(delimiter);
@@ -67,7 +70,7 @@ public class ErrorBuilder {
 		String v2Message;
 		
 		if (!StringUtils.isBlank(messageHeader)) {
-			String[] arr = messageHeader.split("\\|");
+			String[] arr = messageHeader.split(double_backslash+delimiter);
 			if(arr.length>1 && arr[0].equalsIgnoreCase(msh)) {
 				v2Message = messageHeader;
 			}
@@ -76,8 +79,8 @@ public class ErrorBuilder {
 		} else
 			v2Message = HL7Error_Default;
 		
-		String[] dataSegments = v2Message.split("\\|");				
-		String responseMSH = buildErrorResponse(v2Message, dataSegments);	
+		String[] dataSegments = v2Message.split(double_backslash+delimiter);				
+		String responseMSH = buildErrorResponse(dataSegments);	
 		return responseMSH;
 
 	}	
@@ -87,10 +90,9 @@ public class ErrorBuilder {
 	 * @param dataSegments
 	 * @return
 	 */
-	private static String buildErrorResponse(String parsedMessage, String[] dataSegments) {		
+	private static String buildErrorResponse(String[] dataSegments) {		
 		StringBuilder sb = new StringBuilder();
 		sb.append(msh);
-		sb.append(getMsgId(dataSegments[0]));
 		sb.append(delimiter);
 		sb.append(dataSegments[1]);
 		sb.append(delimiter);
@@ -108,10 +110,13 @@ public class ErrorBuilder {
 		sb.append(delimiter);
 		sb.append(ack);
 		sb.append(delimiter);
+		sb.append(getMsgType(dataSegments));
 		sb.append(delimiter);
-		sb.append(getProcessigId(parsedMessage));
+		sb.append(getMsgId(dataSegments));
 		sb.append(delimiter);
-		sb.append(version);
+		sb.append(getProcessigId(dataSegments));
+		sb.append(delimiter);
+		sb.append(getVersion(dataSegments));
 		
 		sb.append("\n");
 		return sb.toString();
@@ -123,18 +128,11 @@ public class ErrorBuilder {
 	 * @param hlMsg
 	 * @return
 	 */
-	private static String getMsgId(String hlMsg) {
-
-		String msgId = "";
-		
-		if (StringUtils.isEmpty(hlMsg)) {
-			return msgId;
-		}
-		String[] hl7MessageAtt = hlMsg.split(double_backslash + delimiter);
-		if (hl7MessageAtt.length > 9) {
-			msgId = hl7MessageAtt[9];
-		}
-	
+	private static String getMsgId(String[] dataSegments) {
+		String msgId = "";		
+		if (dataSegments.length > 9) {
+			msgId = dataSegments[9];
+		}	
 		return msgId;
 	}
 	
@@ -143,19 +141,12 @@ public class ErrorBuilder {
 	 * @param hlMsg
 	 * @return
 	 */
-	private static String getProcessigId(String hlMsg) {
-
-		String msgId = "";
-		
-		if (StringUtils.isEmpty(hlMsg)) {
-			return msgId;
-		}
-		String[] hl7MessageAtt = hlMsg.split(double_backslash+ delimiter);
-		if (hl7MessageAtt.length > 10) {
-			msgId = hl7MessageAtt[10];
-		}
-	
-		return msgId;
+	private static String getProcessigId(String[] dataSegments) {
+		String processingId = "";		
+		if (dataSegments.length > 10) {
+			processingId = dataSegments[10];
+		}	
+		return processingId;
 	}
 	
 	/**
@@ -188,6 +179,30 @@ public class ErrorBuilder {
 	private static String getSendingFacility(String[] dataSegments) {
 		if (dataSegments.length>3) {
 			sendingFacility = dataSegments[3];
+		} else {
+			sendingFacility = unknown;
+		}
+		return sendingFacility;
+	}
+	
+	/**
+	 * @param dataSegments
+	 */
+	private static String getVersion(String[] dataSegments) {
+		if (dataSegments.length>11) {
+			sendingFacility = dataSegments[11];
+		} else {
+			sendingFacility = unknown;
+		}
+		return sendingFacility;
+	}
+	
+	/**
+	 * @param dataSegments
+	 */
+	private static String getMsgType(String[] dataSegments) {
+		if (dataSegments.length>8) {
+			sendingFacility = dataSegments[8];
 		} else {
 			sendingFacility = unknown;
 		}

@@ -36,8 +36,10 @@ class ErrorBuilderUnitTest {
 		String errMsg =ErrorBuilder.buildErrorMessage(v2Msg, "HNET_RTRN_INVALIDFORMATERROR");
 		String dataSegments[] = errMsg.split("\n");
 		String expectedMSH ="MSH|~\\&|HNCLIENT|BC00001013|HNCLIENT|moh_hnclient_dev";
+		String expectedMSHMSg ="train96|ACK|R03|9826|D|2.4";
 		String expectedMSA = "MSA|AR|9826|HNET_RTRN_INVALIDFORMATERROR|||";	
 		assertEquals(dataSegments[0].substring(0,53), expectedMSH);
+		assertEquals(dataSegments[0].substring(78), expectedMSHMSg);
 		assertEquals(dataSegments[1],expectedMSA);
 	}
 
