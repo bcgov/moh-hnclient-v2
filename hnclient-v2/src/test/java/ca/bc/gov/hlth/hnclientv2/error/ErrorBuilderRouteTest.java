@@ -8,7 +8,6 @@ import org.apache.camel.Predicate;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.test.junit5.CamelTestSupport;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 
 import ca.bc.gov.hlth.hnclientv2.handler.Base64Encoder;
