@@ -8,23 +8,23 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ErrorBuilder {
 
-	private static String HL7ERROR_DEFAULT = "MSH|^~\\\\&|UNKNOWNAPP|UNKNOWNCLIENT|HL7ERRORGEN|UNKNOWNFACILITY";
+	private static final String HL7ERROR_DEFAULT = "MSH|^~\\\\&|UNKNOWNAPP|UNKNOWNCLIENT|HL7ERRORGEN|UNKNOWNFACILITY";
 	
-	private static String ACK = "ACK";
+	private static final String ACK = "ACK";
 	
-	private static String MSH = "MSH";
+	private static final String MSH = "MSH";
 
-	private static String MSA = "MSA|AR|";
+	private static final String MSA = "MSA|AR|";
 	
-	private static String UNKNOWN = "UNKNOWN";
+	private static final String UNKNOWN = "UNKNOWN";
 	
-	private static String SENDING_RECEIVING_APP = "HNCLIENT";
+	private static final String SENDING_RECEIVING_APP = "HNCLIENT";
 	
-	private  static String DOUBLE_BACKSLASH = "\\"; // For using specific string in regex mathces
+	private  static final String DOUBLE_BACKSLASH = "\\"; // For using specific string in regex mathces
 	
-	private  static String DELIMITER = "|";
+	private  static final String DELIMITER = "|";
 
-	private static Timestamp TIMESTAMP = new Timestamp(System.currentTimeMillis());
+	private static final Timestamp TIMESTAMP = new Timestamp(System.currentTimeMillis());
 
 
 	
