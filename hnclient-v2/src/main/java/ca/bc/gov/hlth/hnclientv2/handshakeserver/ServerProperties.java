@@ -9,12 +9,17 @@ public class ServerProperties {
 	private Integer socketReadSleepTime;
 	private Integer maxSocketReadTries;
 	private Integer threadPoolSize;
+	private Boolean acceptRemoteConnections;
+	private String validIpListFile;
 
-	public ServerProperties(Integer serverSocket, Integer socketReadSleepTime, Integer maxSocketReadTries, Integer threadPoolSize) {
+	public ServerProperties(Integer serverSocket, Integer socketReadSleepTime, Integer maxSocketReadTries, Integer threadPoolSize,
+			Boolean acceptRemoteConnections, String validIpListFile) {
 		this.serverSocket = serverSocket;
 		this.socketReadSleepTime = socketReadSleepTime;
 		this.maxSocketReadTries = maxSocketReadTries;
 		this.threadPoolSize = threadPoolSize;
+		this.acceptRemoteConnections = acceptRemoteConnections;
+		this.validIpListFile = validIpListFile;
 	}
 
 	public Integer getServerSocket() {
@@ -47,6 +52,22 @@ public class ServerProperties {
 
 	public void setThreadPoolSize(Integer threadPoolSize) {
 		this.threadPoolSize = threadPoolSize;
+	}
+
+	public Boolean getAcceptRemoteConnections() {
+		return acceptRemoteConnections;
+	}
+
+	public void setAcceptRemoteConnections(Boolean acceptRemoteConnections) {
+		this.acceptRemoteConnections = acceptRemoteConnections;
+	}
+
+	public String getValidIpListFile() {
+		return validIpListFile;
+	}
+
+	public void setValidIpListFile(String validIpListFile) {
+		this.validIpListFile = validIpListFile;
 	}
 
 }

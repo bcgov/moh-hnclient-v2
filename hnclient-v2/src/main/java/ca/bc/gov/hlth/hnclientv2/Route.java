@@ -76,6 +76,12 @@ public class Route extends RouteBuilder {
     @PropertyInject(defaultValue = "1", value = "thread-pool-size")
     private Integer threadPoolSize;
     
+    @PropertyInject(defaultValue = "false", value = "accept-remote-connections")
+    private Boolean acceptRemoteConnections;
+    
+    @PropertyInject(value = "valid-ip-list-file")
+    private String validIpListFile;
+    
     @PropertyInject(defaultValue = "30", value = "days-before-expiry-to-renew")
     private Integer daysBeforeExpiryToRenew;
 
@@ -127,7 +133,7 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize);
+        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
 		new HandshakeServer(producer, properties);
 
         ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
