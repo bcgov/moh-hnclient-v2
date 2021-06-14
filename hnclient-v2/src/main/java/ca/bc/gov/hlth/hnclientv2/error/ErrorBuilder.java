@@ -27,15 +27,6 @@ public class ErrorBuilder {
 	private static final Timestamp TIMESTAMP = new Timestamp(System.currentTimeMillis());
 
 
-	
-	@Deprecated
-	public static String generateError(Integer errorCode, String v2Msg) {
-
-		String errCode = ErrorCodes.retrieveEnumByValue(errorCode);
-		return buildErrorMessage(errCode, v2Msg);
-
-	}
-
 	/**
 	 * @param v2Msg
 	 * @param errMsg

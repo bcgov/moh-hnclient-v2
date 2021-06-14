@@ -186,7 +186,7 @@ public class FailureProcessorTest extends CamelTestSupport {
 	private String extractErrorMessage(Object obj) {
 		String str = (String) obj;
 		String[] arr = str.split("\\|");
-		return arr[14];
+		return arr[15];
 	}
 
 }
