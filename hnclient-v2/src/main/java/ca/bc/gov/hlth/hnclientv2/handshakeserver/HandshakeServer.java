@@ -66,22 +66,17 @@ public class HandshakeServer {
 		
 		if (StringUtils.isBlank(properties.getValidIpListFile())) {
 			// This is a valid condition
-			logger.debug("{} - No validIpListFile was configured", methodName);
+			logger.info("{} - No validIpListFile was configured", methodName);
 			return;
 		}
 
 		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(properties.getValidIpListFile())) {
-			if (inputStream != null) {
-				// There's a simpler way to do this using Path and Files but it doesn't work well in an uber jar
-				// with additional code
-				validIpList = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-						.collect(Collectors.toList());
-				logger.info("{} - Loaded {} IP addresses from {}", methodName, validIpList.size(), properties.getValidIpListFile());
-			} else {
-				logger.warn("{} - IP List file configured as {} could not be loaded", methodName, properties.getValidIpListFile());
-			}
-
-		} catch (IOException e) {
+			// There's a simpler way to do this using Path and Files but it doesn't work well in an uber jar
+			// without extraneous additional code
+			validIpList = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
+					.collect(Collectors.toList());
+			logger.info("{} - Loaded {} valid IP addresses from {}", methodName, validIpList.size(), properties.getValidIpListFile());
+		} catch (Exception e) {
 			logger.error("{} - Could not load validIpList. Error: {}", methodName, e.getMessage());
 			throw new RuntimeCamelException("Could not load Valid IP List from " + properties.getValidIpListFile() + ". Please check configuration.");
 		}
@@ -117,9 +112,8 @@ public class HandshakeServer {
 
 						// Local connections are always allowed so only validate remote connections
 						if (!isLocalConnection(hostAddress)) {
-							//
 							if (!properties.getAcceptRemoteConnections()) {
-								logger.warn("{} - Remote connection rejected: Remote connections not allowed".concat(methodName));
+								logger.warn("{} - Remote connection rejected: Remote connections not allowed", methodName);
 								continue;
 							} else {
 								if (!isValidIp(hostAddress)) {
