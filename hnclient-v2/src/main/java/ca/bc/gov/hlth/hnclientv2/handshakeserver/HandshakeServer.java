@@ -11,6 +11,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -129,7 +130,7 @@ public class HandshakeServer {
 						Integer activeCount = executor.getActiveCount();
 
 						logger.debug("{} threads are active", activeCount);
-						if (activeCount == properties.getThreadPoolSize()) {
+						if (Objects.equals(activeCount, properties.getThreadPoolSize())) {
 							logger.info("Max Thread Pool Size reached. Waiting for available thread");
 						}
 						// Checking the queue after submission might seem to give a more accurate count
