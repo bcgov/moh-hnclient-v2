@@ -21,6 +21,6 @@
   
   <!-- Path to the executable, which should be started -->
   <executable>java</executable>
-  <arguments>-jar %BASE%\HNClient-Service-jar-with-dependencies.jar</arguments>
+  <arguments>-jar %BASE%\hns-client.jar</arguments>
 
 </configuration>
