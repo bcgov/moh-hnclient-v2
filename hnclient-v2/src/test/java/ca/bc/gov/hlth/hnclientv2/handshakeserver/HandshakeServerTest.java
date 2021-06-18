@@ -80,7 +80,7 @@ public class HandshakeServerTest {
 		ServerProperties properties = initServerProperties();
 		// Start it on a different port since the other test cases will start
 		// ports that won't shut down until the test terminates.
-		properties.setServerSocket(5556);
+		properties.setServerSocket(5656);
 		properties.setThreadPoolSize(0);
 		new HandshakeServer(null, properties);
 		
@@ -99,7 +99,9 @@ public class HandshakeServerTest {
 		Integer socketReadSleepTime = Integer.valueOf((String)props.get("socket-read-sleep-time"));
 		Integer maxSocketReadTries = Integer.valueOf((String)props.get("max-socket-read-tries"));
 		Integer threadPoolSize = Integer.valueOf((String)props.get("thread-pool-size"));
-		return new ServerProperties(port, socketReadSleepTime, maxSocketReadTries, threadPoolSize);
+		Boolean acceptRemoteConnections = Boolean.valueOf((String)props.get("accept-remote-connection"));
+		String validIpListFile = (String)props.get("valid-ip-list-file");
+		return new ServerProperties(port, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
 	}
 
 }
