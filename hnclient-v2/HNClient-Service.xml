@@ -13,9 +13,9 @@
 <configuration>
   
   <!-- ID of the service. It should be unique across the Windows system-->
-  <id>hnclient-service-new</id>
+  <id>hns-client</id>
   <!-- Display name of the service -->
-  <name>HNClient App Service</name>
+  <name>HNS Client</name>
   <!-- Service description -->
   <description>HNClient Application running as Window Service</description>
   
