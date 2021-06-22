@@ -13,7 +13,7 @@
 <configuration>
   
   <!-- ID of the service. It should be unique across the Windows system-->
-  <id>hns-client</id>
+  <id>HNS-Client</id>
   <!-- Display name of the service -->
   <name>HNS Client</name>
   <!-- Service description -->
