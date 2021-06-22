@@ -1,0 +1,26 @@
+
+
+<!--
+ This is an example of a HNCLient Windows Service Wrapper configuration, which includes only mandatory options.
+ 
+ This configuration file should be placed near the WinSW executable, the name should be the same.
+ E.g. for HNClient-Service.exe the configuration file name should be  HNClient-Service.xml
+ 
+ You can find more information about the configuration options here: https://github.com/winsw/winsw/releases/tag/v2.11.0 sample-minimal.xml
+ and sample-allOptions.xml
+ 
+-->
+<configuration>
+  
+  <!-- ID of the service. It should be unique across the Windows system-->
+  <id>HNS-Client</id>
+  <!-- Display name of the service -->
+  <name>HNS Client</name>
+  <!-- Service description -->
+  <description>HNClient Application running as Window Service</description>
+  
+  <!-- Path to the executable, which should be started -->
+  <executable>java</executable>
+  <arguments>-jar %BASE%\hns-client.jar</arguments>
+
+</configuration>
