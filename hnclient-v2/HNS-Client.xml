@@ -9,6 +9,8 @@
  You can find more information about the configuration options here: https://github.com/winsw/winsw/releases/tag/v2.11.0 sample-minimal.xml
  and sample-allOptions.xml
  
+ -propertiesLocation option loads the external properties file from the classpath or file system
+ 
 -->
 <configuration>
   
@@ -21,6 +23,6 @@
   
   <!-- Path to the executable, which should be started -->
   <executable>java</executable>
-  <arguments>-jar %BASE%\hns-client.jar</arguments>
+  <arguments>-jar %BASE%\hns-client.jar -propertiesLocation file:application.properties</arguments>
 
 </configuration>
