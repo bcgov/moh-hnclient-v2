@@ -23,6 +23,6 @@
   
   <!-- Path to the executable, which should be started -->
   <executable>java</executable>
-  <arguments>-jar %BASE%\hns-client.jar -propertiesLocation file:application.properties</arguments>
+  <arguments>-Dlog4j.configurationFile=log4j2.properties -jar %BASE%\hns-client.jar -propertiesLocation file:application.properties</arguments>
 
 </configuration>

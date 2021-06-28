@@ -190,6 +190,7 @@
 							<exclude>META-INF/*.DSA</exclude>
 							<exclude>META-INF/*.RSA</exclude>
 							<exclude>**/application.properties</exclude>
+							<exclude>**/log4j2.properties</exclude>
 						</excludes>
 					</filter>
 				</filters>
