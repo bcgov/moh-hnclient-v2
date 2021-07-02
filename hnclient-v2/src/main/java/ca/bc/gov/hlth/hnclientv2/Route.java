@@ -8,7 +8,6 @@ import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,9 +104,6 @@ public class Route extends RouteBuilder {
 
         onException(HttpHostConnectException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
-
-        onException(HttpOperationFailedException.class).process(new FailureProcessor())
-        .log("Recieved body ${body}").handled(true);
         
         onException(IllegalArgumentException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
@@ -122,7 +118,7 @@ public class Route extends RouteBuilder {
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .log("Sending to HNSecure")
-            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=true").id("ToHnSecure")
+            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
             .log("Received response from HNSecure")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")

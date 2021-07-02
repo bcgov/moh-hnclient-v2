@@ -2,10 +2,11 @@ package ca.bc.gov.hlth.hnclientv2.error;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 
 public class FailureProcessor implements Processor {
 
@@ -13,7 +14,7 @@ public class FailureProcessor implements Processor {
 
 	@Override
 	public void process(Exchange exchange) {
-		logger.debug("process: Failure Processor is called");
+		logger.debug("{} - Failure Processor is called", LoggingUtil.getMethodName());
 		
 		Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
 		String errMsg = MessageUtil.UNKNOWN_EXCEPTION;
@@ -22,10 +23,6 @@ public class FailureProcessor implements Processor {
 			errMsg = MessageUtil.INVALID_PARAMETER;
 		} else if (exception instanceof HttpHostConnectException) {
 			errMsg = MessageUtil.SERVER_NO_CONNECTION;
-		} else if (exception instanceof HttpOperationFailedException) {
-			HttpOperationFailedException hofe = (HttpOperationFailedException)exception;
-			// TODO (weskubo-cgi) It may be necessary to just send a generic code to the POS
-			errMsg = hofe.getStatusText();
 		} else if (exception instanceof NoInputHL7Exception) {
 			errMsg = MessageUtil.HL7_ERROR_MSG_NO_INPUT_HL7;
 		} else if (exception instanceof ServerNoConnectionException) {
@@ -35,7 +32,7 @@ public class FailureProcessor implements Processor {
 			errMsg = MessageUtil.UNKNOWN_EXCEPTION;
 		}
 		
-		logger.error("Processing Exception of type {} with message {}", exception.getClass().getName(), errMsg);
+		logger.error("{} - Processing Exception of type {} with message {}", LoggingUtil.getMethodName(), getClass().getName(), errMsg);
 		
 		// Give the default error
 		String defaultErrorMessage = ErrorBuilder.buildErrorMessage("", errMsg);
