@@ -1,5 +1,7 @@
 package ca.bc.gov.hlth.hnclientv2.error;
 
+import java.net.UnknownHostException;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.http.conn.HttpHostConnectException;
@@ -22,6 +24,8 @@ public class FailureProcessor implements Processor {
 		if (exception instanceof IllegalArgumentException) {
 			errMsg = MessageUtil.INVALID_PARAMETER;
 		} else if (exception instanceof HttpHostConnectException) {
+			errMsg = MessageUtil.SERVER_NO_CONNECTION;
+		} else if (exception instanceof UnknownHostException) {			
 			errMsg = MessageUtil.SERVER_NO_CONNECTION;
 		} else if (exception instanceof NoInputHL7Exception) {
 			errMsg = MessageUtil.HL7_ERROR_MSG_NO_INPUT_HL7;
