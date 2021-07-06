@@ -22,6 +22,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 
 import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
 import ca.bc.gov.hlth.hnclientv2.error.ServerNoConnectionException;
+import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 import io.netty.util.internal.StringUtil;
 
 public class RetrieveAccessToken {
@@ -36,8 +37,9 @@ public class RetrieveAccessToken {
 
     private AccessToken accessToken;
     private long tokenExpiryTime;
+    private String transactionId;
 
-    public RetrieveAccessToken(String tokenEndpoint, String scopes, ClientAuthenticationBuilder clientAuthBuilder) throws URISyntaxException {
+    public RetrieveAccessToken(String tokenEndpoint, String scopes, ClientAuthenticationBuilder clientAuthBuilder, String requestId) throws URISyntaxException {
     	if (!StringUtil.isNullOrEmpty(scopes)) {
             this.requiredScopes = new Scope(scopes.split(" "));	
     	} else {
@@ -45,15 +47,17 @@ public class RetrieveAccessToken {
     	}
         this.tokenEndpointUri = new URI(tokenEndpoint);
         this.clientAuthBuilder = clientAuthBuilder;
+        this.transactionId = requestId;
         Objects.requireNonNull(this.clientAuthBuilder, "Requires client authentication.");
     }
    
     public synchronized String getToken() throws CamelCustomException {
+    	String methodName = LoggingUtil.getMethodName();
 
         // Reuse the token if the expiry time is more than a minute away
         if (Instant.now().toEpochMilli() + ONE_MINUTE_IN_MILLIS < tokenExpiryTime) {
-            logger.info("Using existing access token");
-            logger.debug("Access token: {}", accessToken.toJSONString());
+            logger.info("{} - TransactionId: {} Using existing access token", methodName, transactionId);
+            logger.debug("{} - - TransactionId: {} Access token: {}", accessToken.toJSONString(), methodName, transactionId);
             return accessToken.toAuthorizationHeader();
         }
 
@@ -86,8 +90,8 @@ public class RetrieveAccessToken {
         // This could be off by a few seconds because it doesn't account for network latency getting the token
         tokenExpiryTime = Instant.now().toEpochMilli() + (accessToken.getLifetime() * 1000);
 
-        logger.debug("Access token: {}", accessToken.toJSONString());
-        logger.info("Token Expires at: {}", tokenExpiryTime);
+        logger.debug("{} - TransactionId: {} Access token: {}", methodName, transactionId,  accessToken.toJSONString());
+        logger.info("{} - TransactionId: {} Token Expires at: {}",methodName, transactionId,  tokenExpiryTime);
 
         return accessToken.toAuthorizationHeader();
     }

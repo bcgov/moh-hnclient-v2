@@ -16,6 +16,8 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
+import ca.bc.gov.hlth.hnclientv2.TransactionIdGenerator;
+
 public class HandshakeServerTest {
 	private static final String LOCAL_IP_ADDRESS = "127.0.0.1";
 
@@ -30,7 +32,8 @@ public class HandshakeServerTest {
 	@Test
 	public void testInitConnectionHandlers_success() throws UnknownHostException, IOException, InterruptedException {
 		ServerProperties properties = initServerProperties();
-		new HandshakeServer(null, properties);
+		String transactionId = new TransactionIdGenerator().generateUuid();
+		new HandshakeServer(null, properties, transactionId);
 
 		try (Socket netSocket = new Socket(LOCAL_IP_ADDRESS, properties.getServerSocket());
 				BufferedInputStream socketInput = new BufferedInputStream(netSocket.getInputStream(), 1000);
@@ -78,11 +81,12 @@ public class HandshakeServerTest {
 	@Test
 	public void testInitConnectionHandlers_noThreads() throws IOException {
 		ServerProperties properties = initServerProperties();
+		String transactionId = new TransactionIdGenerator().generateUuid();
 		// Start it on a different port since the other test cases will start
 		// ports that won't shut down until the test terminates.
 		properties.setServerSocket(5656);
 		properties.setThreadPoolSize(0);
-		new HandshakeServer(null, properties);
+		new HandshakeServer(null, properties, transactionId );
 		
     	assertThrows(ConnectException.class, () -> {
     		new Socket(LOCAL_IP_ADDRESS, properties.getServerSocket());

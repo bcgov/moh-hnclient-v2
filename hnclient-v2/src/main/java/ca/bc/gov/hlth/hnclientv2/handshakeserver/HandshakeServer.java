@@ -43,12 +43,15 @@ public class HandshakeServer {
 	private String localIpAddress;
 
 	private String loopbackIpAddress;
+	
+	private String transactionId;
 
 	private List<String> validIpList = new ArrayList<String>();
 
-	public HandshakeServer(ProducerTemplate producer, ServerProperties properties) {
+	public HandshakeServer(ProducerTemplate producer, ServerProperties properties, String requestId) {
 		this.producer = producer;
 		this.properties = properties;
+		this.transactionId = requestId;
 		initAccessControl();
 		initConnectionHandler();
 	}
@@ -56,18 +59,18 @@ public class HandshakeServer {
 	private void initAccessControl() {
 		String methodName = LoggingUtil.getMethodName();
 		try {
-			localIpAddress = InetAddress.getLocalHost().getHostAddress();
-			logger.debug("Local IP Address {}", localIpAddress);
+			localIpAddress = InetAddress.getLocalHost().getHostAddress();			
+			logger.debug("{} - TransactionId: {}, Local IP Address {}", methodName, transactionId, localIpAddress);
 
-			loopbackIpAddress = InetAddress.getLoopbackAddress().getHostAddress();
-			logger.debug("Loopback IP Address {}", loopbackIpAddress);
+			loopbackIpAddress = InetAddress.getLoopbackAddress().getHostAddress();			
+			logger.debug("{} - TransactionId: {}, Loopback IP Address {}", methodName, transactionId, loopbackIpAddress);
 		} catch (UnknownHostException e) {
-			logger.error("{} - Could not get host address", methodName);
+			logger.error("{} - TransactionId: {}, Could not get host address", methodName, transactionId );
 		}
 		
 		if (StringUtils.isBlank(properties.getValidIpListFile())) {
 			// This is a valid condition
-			logger.info("{} - No validIpListFile was configured", methodName);
+			logger.info("{} - TransactionId: {}, No validIpListFile was configured", methodName, transactionId);
 			return;
 		}
 
@@ -76,9 +79,9 @@ public class HandshakeServer {
 			// without extraneous additional code
 			validIpList = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
 					.collect(Collectors.toList());
-			logger.info("{} - Loaded {} valid IP addresses from {}", methodName, validIpList.size(), properties.getValidIpListFile());
+			logger.info("{} - TransactionId: {}, Loaded {} valid IP addresses from {}", methodName, transactionId, validIpList.size(), properties.getValidIpListFile());
 		} catch (Exception e) {
-			logger.error("{} - Could not load validIpList. Error: {}", methodName, e.getMessage());
+			logger.error("{} - TransactionId: {}, Could not load validIpList. Error: {}", methodName, transactionId, e.getMessage());
 			throw new RuntimeCamelException("Could not load Valid IP List from " + properties.getValidIpListFile() + ". Please check configuration.");
 		}
 	}
@@ -108,36 +111,36 @@ public class HandshakeServer {
 
 						String hostAddress = connectionSocket.getInetAddress().getHostAddress();
 
-						logger.info("{} - Accepting connection attempt from IP Address: {}", methodName,
+						logger.info("{} - TransactionId: {}, Accepting connection attempt from IP Address: {}", methodName, transactionId,
 								hostAddress);
 
 						// Local connections are always allowed so only validate remote connections
 						if (!isLocalConnection(hostAddress)) {
 							if (!properties.getAcceptRemoteConnections()) {
-								logger.warn("{} - Remote connection rejected: Remote connections not allowed", methodName);
+								logger.warn("{} - TransactionId: {}, Remote connection rejected: Remote connections not allowed", methodName, transactionId);
 								continue;
 							} else {
 								if (!isValidIp(hostAddress)) {
-									logger.warn("{} - Remote connection rejected. IP address {} not in valid list", methodName, hostAddress);
+									logger.warn("{} - TransactionId: {}, Remote connection rejected. IP address {} not in valid list", methodName, transactionId,  hostAddress);
 									continue;	
 								}
 							}
 						}
 
 						ConnectionHandler handler = new ConnectionHandler(producer, connectionSocket, properties.getSocketReadSleepTime(),
-								properties.getMaxSocketReadTries());
+								properties.getMaxSocketReadTries(), transactionId );
 
 						Integer activeCount = executor.getActiveCount();
 
-						logger.debug("{} threads are active", activeCount);
+						logger.debug("{} - TransactionId: {} threads are active",methodName, transactionId,  activeCount);
 						if (Objects.equals(activeCount, properties.getThreadPoolSize())) {
-							logger.info("Max Thread Pool Size reached. Waiting for available thread");
+							logger.info("{} - TransactionId: {} Max Thread Pool Size reached. Waiting for available thread", methodName, transactionId);
 						}
 						// Checking the queue after submission might seem to give a more accurate count
 						// but at that point the submitted item is always in the queue (albeit briefly)
 						Integer queueSize = executor.getQueue().size();
 						if (queueSize > 0) {
-							logger.debug("{} items waiting in queue", queueSize);
+							logger.debug("{} - TransactionId: {} {} items waiting in queue", methodName, transactionId, queueSize);
 						}
 
 						executor.submit(handler);
@@ -147,7 +150,7 @@ public class HandshakeServer {
 
 					}
 				} catch (IOException ioe) {
-					logger.error("{} - Could not start ServerSocket on {}. Error: {}", methodName,
+					logger.error("{} - TransactionId: {}  Could not start ServerSocket on {}. Error: {}", methodName, transactionId,
 							properties.getServerSocket(), ioe.getMessage());
 					throw new RuntimeCamelException("Could not start HandshakeServer", ioe);
 				} finally {
@@ -155,7 +158,7 @@ public class HandshakeServer {
 						try {
 							mysocket.close();
 						} catch (IOException e) {
-							logger.warn("{} - ServerSocket could not be closed", methodName);
+							logger.warn("{} - TransactionId: {} ServerSocket could not be closed", methodName, transactionId);
 						}
 					}
 					executor.shutdown();
@@ -172,7 +175,7 @@ public class HandshakeServer {
 			public void uncaughtException(Thread th, Throwable ex) {
 				// XXX We don't want to end up here as this means the error was not caught
 				// and we have no good way to recover from it.
-				logger.error("{} - Unhandled exception {} in thread {}", LoggingUtil.getMethodName(), ex.getMessage(), th.getId());
+				logger.error("{} - TransactionId: {} Unhandled exception {} in thread {}", LoggingUtil.getMethodName(), transactionId, ex.getMessage(), th.getId());
 			}
 		};
 
