@@ -7,9 +7,12 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
+
 public class FailureProcessor implements Processor {
 
 	private static final Logger logger = LoggerFactory.getLogger(FailureProcessor.class);
+	private static final String HTTP_REQUEST_ID_HEADER = "X-Request-Id";
 
 	@Override
 	public void process(Exchange exchange) {
@@ -35,7 +38,7 @@ public class FailureProcessor implements Processor {
 			errMsg = MessageUtil.UNKNOWN_EXCEPTION;
 		}
 		
-		logger.error("Processing Exception of type {} with message {}", exception.getClass().getName(), errMsg);
+		logger.error("{} - TransactionId: {} Processing Exception of type {} with message {}", LoggingUtil.getMethodName(), exchange.getIn().getHeader(HTTP_REQUEST_ID_HEADER),  exception.getClass().getName(), errMsg);
 		
 		// Give the default error
 		String defaultErrorMessage = ErrorBuilder.buildErrorMessage("", errMsg);
