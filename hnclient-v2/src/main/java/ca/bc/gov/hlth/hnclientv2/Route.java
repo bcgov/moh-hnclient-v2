@@ -41,8 +41,6 @@ public class Route extends RouteBuilder {
     
     private static final String CLIENT_AUTH_TYPE_SIGNED_JWT = "SIGNED_JWT";
     
-    private static final String HTTP_REQUEST_ID_HEADER = "X-Request-Id";
-
     @PropertyInject(value = "token-endpoint")
     private String tokenEndpoint;
 
@@ -105,8 +103,7 @@ public class Route extends RouteBuilder {
      */
     @Override
     public void configure() throws Exception {
-    	String requestId = new TransactionIdGenerator().generateUuid();
-        init(requestId);
+        init();
         
         onException(HttpHostConnectException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
@@ -122,8 +119,7 @@ public class Route extends RouteBuilder {
         
         from("direct:start").routeId("hnclient-route")
             .log("Retrieving access token")
-            .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")
-            .setHeader(HTTP_REQUEST_ID_HEADER).simple(requestId)
+            .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")           
             .setBody().method(new Base64Encoder()).id("Base64Encoder")
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
@@ -138,16 +134,16 @@ public class Route extends RouteBuilder {
     // This makes it easier to test the route and keeps some of this initialization code separate from the route config
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
-    public void init(String requestId) throws Exception {
+    public void init() throws Exception {
         ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
       //The purpose is to set custom unique id for logging
     
-		new HandshakeServer(producer, properties,requestId);
+		new HandshakeServer(producer, properties);
 
         ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
-        retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder, requestId);
+        retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
         if (clientAuthBuilder instanceof SignedJwtBuilder) {
-            renewKeys(requestId);
+            renewKeys();
         }
     }
 
@@ -161,7 +157,7 @@ public class Route extends RouteBuilder {
         }
     }
 
-    private void renewKeys(String transactionId) throws Exception {
+    private void renewKeys() throws Exception {
         // Check the existing keys to see if they should be renewed
         File jksFile = new File(jksFilePath);
 
@@ -169,15 +165,15 @@ public class Route extends RouteBuilder {
         LocalDate certExpiry = KeystoreTools.getKeystoreExpiry(keystore, keyAlias);
         LocalDate dateRangeToRenewCert = LocalDate.now().plusDays(daysBeforeExpiryToRenew);
         if (!certExpiry.isBefore(dateRangeToRenewCert)) {
-            logger.info("{} - TransactionId: {} Certificates do not expire before {}. Certificates will not be renewed", LoggingUtil.getMethodName(), transactionId, dateRangeToRenewCert);
+            logger.info("{} - Certificates do not expire before {}. Certificates will not be renewed", LoggingUtil.getMethodName(), dateRangeToRenewCert);
         } else {
             //This may actually need a different instance of RetrieveAccessToken with different scopes
-            logger.info("{} - TransactionId: {} Certificates expire before {}. Certificates will be renewed",LoggingUtil.getMethodName(), transactionId, dateRangeToRenewCert);
+            logger.info("{} - Certificates expire before {}. Certificates will be renewed",LoggingUtil.getMethodName(), dateRangeToRenewCert);
             RenewKeys.renewKeys(retrieveAccessToken.getToken(), 1, keyAlias, jksFilePath, cerFilePath, cerUploadEndpoint, keystorePassword);
 
             //Reset the client auth builder with the new cert
             ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
-            retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder, transactionId );
+            retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
         }
     }
 }

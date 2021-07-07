@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.bc.gov.hlth.hnclientv2.TransactionIdGenerator;
 import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 
 /**
@@ -48,10 +49,9 @@ public class HandshakeServer {
 
 	private List<String> validIpList = new ArrayList<String>();
 
-	public HandshakeServer(ProducerTemplate producer, ServerProperties properties, String requestId) {
+	public HandshakeServer(ProducerTemplate producer, ServerProperties properties) {
 		this.producer = producer;
 		this.properties = properties;
-		this.transactionId = requestId;
 		initAccessControl();
 		initConnectionHandler();
 	}
@@ -60,17 +60,17 @@ public class HandshakeServer {
 		String methodName = LoggingUtil.getMethodName();
 		try {
 			localIpAddress = InetAddress.getLocalHost().getHostAddress();			
-			logger.debug("{} - TransactionId: {}, Local IP Address {}", methodName, transactionId, localIpAddress);
+			logger.debug("{} - Local IP Address {}", methodName,localIpAddress);
 
 			loopbackIpAddress = InetAddress.getLoopbackAddress().getHostAddress();			
-			logger.debug("{} - TransactionId: {}, Loopback IP Address {}", methodName, transactionId, loopbackIpAddress);
+			logger.debug("{} - Loopback IP Address {}", methodName,loopbackIpAddress);
 		} catch (UnknownHostException e) {
-			logger.error("{} - TransactionId: {}, Could not get host address", methodName, transactionId );
+			logger.error("{} - Could not get host address", methodName );
 		}
 		
 		if (StringUtils.isBlank(properties.getValidIpListFile())) {
 			// This is a valid condition
-			logger.info("{} - TransactionId: {}, No validIpListFile was configured", methodName, transactionId);
+			logger.info("{} - No validIpListFile was configured", methodName);
 			return;
 		}
 
@@ -79,9 +79,9 @@ public class HandshakeServer {
 			// without extraneous additional code
 			validIpList = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
 					.collect(Collectors.toList());
-			logger.info("{} - TransactionId: {}, Loaded {} valid IP addresses from {}", methodName, transactionId, validIpList.size(), properties.getValidIpListFile());
+			logger.info("{} - Loaded {} valid IP addresses from {}", methodName, validIpList.size(), properties.getValidIpListFile());
 		} catch (Exception e) {
-			logger.error("{} - TransactionId: {}, Could not load validIpList. Error: {}", methodName, transactionId, e.getMessage());
+			logger.error("{} - Could not load validIpList. Error: {}", methodName, e.getMessage());
 			throw new RuntimeCamelException("Could not load Valid IP List from " + properties.getValidIpListFile() + ". Please check configuration.");
 		}
 	}
@@ -110,6 +110,8 @@ public class HandshakeServer {
 						Socket connectionSocket = mysocket.accept();
 
 						String hostAddress = connectionSocket.getInetAddress().getHostAddress();
+						
+						String transactionId = new TransactionIdGenerator().generateUuid();
 
 						logger.info("{} - TransactionId: {}, Accepting connection attempt from IP Address: {}", methodName, transactionId,
 								hostAddress);
@@ -128,7 +130,7 @@ public class HandshakeServer {
 						}
 
 						ConnectionHandler handler = new ConnectionHandler(producer, connectionSocket, properties.getSocketReadSleepTime(),
-								properties.getMaxSocketReadTries(), transactionId );
+								properties.getMaxSocketReadTries(), transactionId);
 
 						Integer activeCount = executor.getActiveCount();
 

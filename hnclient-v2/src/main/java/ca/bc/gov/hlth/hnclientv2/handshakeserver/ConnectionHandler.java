@@ -12,6 +12,8 @@ import org.apache.camel.ProducerTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.bc.gov.hlth.hnclientv2.Route;
+import ca.bc.gov.hlth.hnclientv2.TransactionIdGenerator;
 import ca.bc.gov.hlth.hnclientv2.error.ErrorBuilder;
 import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
 import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
@@ -65,16 +67,21 @@ public class ConnectionHandler implements Callable<Void> {
 	
 	private final ProducerTemplate producer;
 	
-	public ConnectionHandler(ProducerTemplate producer, Socket socket, Integer socketReadSleepTime, Integer maxSocketReadTries, String transactionId) {
+	private static final String HTTP_REQUEST_ID_HEADER = "X-Request-Id";
+	
+	public ConnectionHandler(ProducerTemplate producer, Socket socket, Integer socketReadSleepTime, Integer maxSocketReadTries, String requestId) {
 		this.producer = producer;
 		this.socket = socket;
 		this.socketReadSleepTime = socketReadSleepTime;
 		this.maxSocketReadTries = maxSocketReadTries;
-		this.transactionId = transactionId;
+		this.transactionId = requestId;
+		
 	}
 
 	@Override
 	public Void call() throws Exception {
+		//String transactionId = new TransactionIdGenerator().generateUuid()		
+		
 		String methodName = LoggingUtil.getMethodName();
 		BufferedInputStream socketInput = null;
 		BufferedOutputStream socketOutput = null;
@@ -271,7 +278,8 @@ public class ConnectionHandler implements Callable<Void> {
 			logger.debug("{} - TransactionId: {} HL7 message received from POS: {}", methodName, transactionId,  HL7IN);
 			try {
 				logger.info("{} - TransactionId: {} Attempting to send the txn to remote server: {}", methodName, transactionId, ret_code);
-				hnSecureResponse = (String) producer.requestBody(HL7IN);
+				
+				hnSecureResponse = (String) producer.requestBodyAndHeader(HL7IN, HTTP_REQUEST_ID_HEADER, transactionId);
 			} catch (Exception e) {
 				logger.error("{} - Error while sending request to ESB  :{}",e.getMessage());
 				ret_code = MessageUtil.HNET_RTRN_REMOTETIMEOUT;
