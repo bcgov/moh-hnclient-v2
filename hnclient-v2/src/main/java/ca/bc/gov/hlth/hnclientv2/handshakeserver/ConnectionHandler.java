@@ -88,7 +88,7 @@ public class ConnectionHandler implements Callable<Void> {
 				performTransaction(socketInput, socketOutput);
 			} else {
 				logger.warn("{} - Handshake failed: {} {}", LoggingUtil.getMethodName(), ret_code, System.lineSeparator());
-				hnSecureResponse = ErrorBuilder.buildErrorMessage("",ret_code);
+				hnSecureResponse = ErrorBuilder.buildErrorMessage(ret_code);
 				sendResponse(socketOutput, hnSecureResponse);
 				// reset decodeseed
 				decodeSeed = 0;
@@ -101,7 +101,7 @@ public class ConnectionHandler implements Callable<Void> {
 			if (ret_code.contentEquals(MessageUtil.HNET_RTRN_SUCCESS)) {
 				ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 			}
-			hnSecureResponse = ErrorBuilder.buildErrorMessage("", ret_code);
+			hnSecureResponse = ErrorBuilder.buildErrorMessage(ret_code);
 			try {
 				sendResponse(socketOutput, hnSecureResponse);
 			} catch (IOException ioe) {
@@ -220,7 +220,7 @@ public class ConnectionHandler implements Callable<Void> {
 				logger.debug("{} Error receiving DT segment from Listener: {}", methodName, ret_code);
 				ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 				hnSecureResponse = ErrorBuilder
-						.buildErrorMessage("", MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
+						.buildErrorMessage(MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
 			}
 
 		}

@@ -39,7 +39,7 @@ public class FailureProcessor implements Processor {
 		logger.error("{} - Processing Exception of type {} with message {}", LoggingUtil.getMethodName(), getClass().getName(), errMsg);
 		
 		// Give the default error
-		String defaultErrorMessage = ErrorBuilder.buildErrorMessage("", errMsg);
+		String defaultErrorMessage = ErrorBuilder.buildErrorMessage(errMsg);
 		exchange.getIn().setBody(defaultErrorMessage);
 	}
 }

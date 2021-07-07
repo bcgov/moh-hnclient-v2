@@ -27,7 +27,7 @@ public class FhirPayloadExtractor {
     	// and return an error response
     	if (StringUtils.isBlank(fhirMessage)) {
     		logger.error("{} - Response from HNS ESB has empty body", LoggingUtil.getMethodName());
-    		return ErrorBuilder.buildErrorMessage("", MessageUtil.SERVER_NO_CONNECTION);
+    		return ErrorBuilder.buildErrorMessage(MessageUtil.SERVER_NO_CONNECTION);
     	}
 
         JSONObject fhirMessageJSON;
@@ -39,7 +39,7 @@ public class FhirPayloadExtractor {
 	    	// and return an error response.
 			// E.g. a 404 error will likely return HTML
 			logger.error("{} - Response from HNS ESB has invalid body: {}", LoggingUtil.getMethodName(), e.getMessage());
-    		return ErrorBuilder.buildErrorMessage("", MessageUtil.SERVER_NO_CONNECTION);
+    		return ErrorBuilder.buildErrorMessage(MessageUtil.SERVER_NO_CONNECTION);
 		}
         
         FHIRJsonMessage encodedExtractedMessage = FHIRJsonUtil.parseJson2FHIRMsg(fhirMessageJSON); // get the data property
