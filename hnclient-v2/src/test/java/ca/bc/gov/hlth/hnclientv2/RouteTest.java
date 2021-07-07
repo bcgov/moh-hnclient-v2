@@ -52,11 +52,10 @@ public class RouteTest extends CamelTestSupport {
         //Since we're not running from the main we need to set the properties
         PropertiesComponent pc = context.getPropertiesComponent();
         pc.setLocation("classpath:application.properties");
-        String transactionId = new TransactionIdGenerator().generateUuid();
-
+       
         // Skip the init() steps
         Route routeMock = spy(Route.class);
-        doNothing().when(routeMock).init(transactionId);
+        doNothing().when(routeMock).init();
 
         context.addRoutes(routeMock);
         // Skip the retrieve access token step and the send to HnSecure step

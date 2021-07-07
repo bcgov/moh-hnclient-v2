@@ -37,17 +37,15 @@ public class RetrieveAccessToken {
 
     private AccessToken accessToken;
     private long tokenExpiryTime;
-    private String transactionId;
-
-    public RetrieveAccessToken(String tokenEndpoint, String scopes, ClientAuthenticationBuilder clientAuthBuilder, String requestId) throws URISyntaxException {
+  
+    public RetrieveAccessToken(String tokenEndpoint, String scopes, ClientAuthenticationBuilder clientAuthBuilder) throws URISyntaxException {
     	if (!StringUtil.isNullOrEmpty(scopes)) {
             this.requiredScopes = new Scope(scopes.split(" "));	
     	} else {
     		this.requiredScopes = new Scope();
     	}
         this.tokenEndpointUri = new URI(tokenEndpoint);
-        this.clientAuthBuilder = clientAuthBuilder;
-        this.transactionId = requestId;
+        this.clientAuthBuilder = clientAuthBuilder;      
         Objects.requireNonNull(this.clientAuthBuilder, "Requires client authentication.");
     }
    
@@ -56,8 +54,8 @@ public class RetrieveAccessToken {
 
         // Reuse the token if the expiry time is more than a minute away
         if (Instant.now().toEpochMilli() + ONE_MINUTE_IN_MILLIS < tokenExpiryTime) {
-            logger.info("{} - TransactionId: {} Using existing access token", methodName, transactionId);
-            logger.debug("{} - - TransactionId: {} Access token: {}", accessToken.toJSONString(), methodName, transactionId);
+            logger.info("{} - Using existing access token", methodName);
+            logger.debug("{} - Access token: {}", accessToken.toJSONString(), methodName);
             return accessToken.toAuthorizationHeader();
         }
 
@@ -90,8 +88,8 @@ public class RetrieveAccessToken {
         // This could be off by a few seconds because it doesn't account for network latency getting the token
         tokenExpiryTime = Instant.now().toEpochMilli() + (accessToken.getLifetime() * 1000);
 
-        logger.debug("{} - TransactionId: {} Access token: {}", methodName, transactionId,  accessToken.toJSONString());
-        logger.info("{} - TransactionId: {} Token Expires at: {}",methodName, transactionId,  tokenExpiryTime);
+        logger.debug("{} -  Access token: {}", methodName, accessToken.toJSONString());
+        logger.info("{} - Token Expires at: {}",methodName, tokenExpiryTime);
 
         return accessToken.toAuthorizationHeader();
     }

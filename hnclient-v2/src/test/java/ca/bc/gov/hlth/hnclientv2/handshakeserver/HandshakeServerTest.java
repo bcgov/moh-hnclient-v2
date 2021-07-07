@@ -31,9 +31,8 @@ public class HandshakeServerTest {
 	 */
 	@Test
 	public void testInitConnectionHandlers_success() throws UnknownHostException, IOException, InterruptedException {
-		ServerProperties properties = initServerProperties();
-		String transactionId = new TransactionIdGenerator().generateUuid();
-		new HandshakeServer(null, properties, transactionId);
+		ServerProperties properties = initServerProperties();		
+		new HandshakeServer(null, properties);
 
 		try (Socket netSocket = new Socket(LOCAL_IP_ADDRESS, properties.getServerSocket());
 				BufferedInputStream socketInput = new BufferedInputStream(netSocket.getInputStream(), 1000);
@@ -86,7 +85,7 @@ public class HandshakeServerTest {
 		// ports that won't shut down until the test terminates.
 		properties.setServerSocket(5656);
 		properties.setThreadPoolSize(0);
-		new HandshakeServer(null, properties, transactionId );
+		new HandshakeServer(null, properties);
 		
     	assertThrows(ConnectException.class, () -> {
     		new Socket(LOCAL_IP_ADDRESS, properties.getServerSocket());
