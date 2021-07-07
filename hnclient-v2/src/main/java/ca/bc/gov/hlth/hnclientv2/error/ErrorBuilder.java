@@ -28,17 +28,25 @@ public class ErrorBuilder {
 
 
 	/**
+	 * @param errMsg
+	 * @return
+	 */
+	public static String buildErrorMessage(String errMsg) {
+		return buildErrorMessage(null, errMsg);
+	}
+	
+	/**
 	 * @param v2Msg
 	 * @param errMsg
 	 * @return
 	 */
-	public static String buildErrorMessage(String v2Msg,String errMsg) {
-		return buildMSH(v2Msg) +buildMSA(v2Msg,errMsg);
+	public static String buildErrorMessage(String v2Msg, String errMsg) {
+		return buildMSH(v2Msg) + buildMSA(v2Msg, errMsg);
 	}
 
 	private static String buildMSA(String v2Msg, String errMsg) {
-		if(StringUtils.isBlank(v2Msg)) {
-			v2Msg= HL7ERROR_DEFAULT;
+		if (StringUtils.isBlank(v2Msg)) {
+			v2Msg = HL7ERROR_DEFAULT;
 		}
 		
 		StringBuilder sb = new StringBuilder();
