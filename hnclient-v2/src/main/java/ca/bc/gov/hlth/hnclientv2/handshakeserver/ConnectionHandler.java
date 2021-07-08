@@ -79,9 +79,7 @@ public class ConnectionHandler implements Callable<Void> {
 	}
 
 	@Override
-	public Void call() throws Exception {
-		//String transactionId = new TransactionIdGenerator().generateUuid()		
-		
+	public Void call() throws Exception {	
 		String methodName = LoggingUtil.getMethodName();
 		BufferedInputStream socketInput = null;
 		BufferedOutputStream socketOutput = null;
