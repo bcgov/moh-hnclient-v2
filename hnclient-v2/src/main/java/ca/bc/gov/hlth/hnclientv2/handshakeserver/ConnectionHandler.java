@@ -12,8 +12,6 @@ import org.apache.camel.ProducerTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ca.bc.gov.hlth.hnclientv2.Route;
-import ca.bc.gov.hlth.hnclientv2.TransactionIdGenerator;
 import ca.bc.gov.hlth.hnclientv2.error.ErrorBuilder;
 import ca.bc.gov.hlth.hnclientv2.error.MessageUtil;
 import ca.bc.gov.hlth.hncommon.util.LoggingUtil;

@@ -79,8 +79,7 @@ public class HandshakeServerTest {
 	 */
 	@Test
 	public void testInitConnectionHandlers_noThreads() throws IOException {
-		ServerProperties properties = initServerProperties();
-		String transactionId = new TransactionIdGenerator().generateUuid();
+		ServerProperties properties = initServerProperties();		
 		// Start it on a different port since the other test cases will start
 		// ports that won't shut down until the test terminates.
 		properties.setServerSocket(5656);
