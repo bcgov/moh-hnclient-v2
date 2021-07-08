@@ -16,8 +16,6 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
-import ca.bc.gov.hlth.hnclientv2.TransactionIdGenerator;
-
 public class HandshakeServerTest {
 	private static final String LOCAL_IP_ADDRESS = "127.0.0.1";
 

@@ -1,6 +1,7 @@
 package ca.bc.gov.hlth.hnclientv2;
 
 import java.io.File;
+import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.time.LocalDate;
 
@@ -8,7 +9,6 @@ import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +26,6 @@ import ca.bc.gov.hlth.hnclientv2.handshakeserver.HandshakeServer;
 import ca.bc.gov.hlth.hnclientv2.handshakeserver.ServerProperties;
 import ca.bc.gov.hlth.hnclientv2.keystore.KeystoreTools;
 import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
-import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
-
 
 public class Route extends RouteBuilder {
 
@@ -40,7 +38,7 @@ public class Route extends RouteBuilder {
     private static final String CLIENT_AUTH_TYPE_CLIENT_ID_SECRET = "CLIENT_ID_SECRET";
     
     private static final String CLIENT_AUTH_TYPE_SIGNED_JWT = "SIGNED_JWT";
-    
+
     @PropertyInject(value = "token-endpoint")
     private String tokenEndpoint;
 
@@ -101,14 +99,12 @@ public class Route extends RouteBuilder {
      *   5. Sends the message to an http endpoint (HNS-ESB) with the JWT attached
      *   6. Returns the response to the original tcp caller
      */
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void configure() throws Exception {
         init();
-        
-        onException(HttpHostConnectException.class).process(new FailureProcessor())
-        .log("Recieved body ${body}").handled(true);
 
-        onException(HttpOperationFailedException.class).process(new FailureProcessor())
+        onException(HttpHostConnectException.class, UnknownHostException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
         
         onException(IllegalArgumentException.class).process(new FailureProcessor())
@@ -119,12 +115,12 @@ public class Route extends RouteBuilder {
         
         from("direct:start").routeId("hnclient-route")
             .log("Retrieving access token")
-            .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")           
+            .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")
             .setBody().method(new Base64Encoder()).id("Base64Encoder")
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .log("Sending to HNSecure")
-            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=true").id("ToHnSecure")
+            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
             .log("Received response from HNSecure")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")
@@ -135,9 +131,8 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);   
-		
-        new HandshakeServer(producer, properties);
+        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
+		new HandshakeServer(producer, properties);
 
         ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
@@ -164,10 +159,10 @@ public class Route extends RouteBuilder {
         LocalDate certExpiry = KeystoreTools.getKeystoreExpiry(keystore, keyAlias);
         LocalDate dateRangeToRenewCert = LocalDate.now().plusDays(daysBeforeExpiryToRenew);
         if (!certExpiry.isBefore(dateRangeToRenewCert)) {
-            logger.info("{} - Certificates do not expire before {}. Certificates will not be renewed", LoggingUtil.getMethodName(), dateRangeToRenewCert);
+            logger.info("Certificates do not expire before {}. Certificates will not be renewed", dateRangeToRenewCert);
         } else {
             //This may actually need a different instance of RetrieveAccessToken with different scopes
-            logger.info("{} - Certificates expire before {}. Certificates will be renewed",LoggingUtil.getMethodName(), dateRangeToRenewCert);
+            logger.info("Certificates expire before {}. Certificates will be renewed", dateRangeToRenewCert);
             RenewKeys.renewKeys(retrieveAccessToken.getToken(), 1, keyAlias, jksFilePath, cerFilePath, cerUploadEndpoint, keystorePassword);
 
             //Reset the client auth builder with the new cert
