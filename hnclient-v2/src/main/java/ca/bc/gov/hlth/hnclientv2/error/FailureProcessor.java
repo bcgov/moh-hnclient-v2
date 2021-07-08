@@ -8,6 +8,7 @@ import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ca.bc.gov.hlth.hnclientv2.handshakeserver.ConnectionHandler;
 import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 
 public class FailureProcessor implements Processor {
@@ -16,6 +17,7 @@ public class FailureProcessor implements Processor {
 
 	@Override
 	public void process(Exchange exchange) {
+		String transactionId = exchange.getIn().getHeader(ConnectionHandler.HTTP_REQUEST_ID_HEADER, String.class);
 		logger.debug("{} - Failure Processor is called", LoggingUtil.getMethodName());
 		
 		Exception exception = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
@@ -36,7 +38,7 @@ public class FailureProcessor implements Processor {
 			errMsg = MessageUtil.UNKNOWN_EXCEPTION;
 		}
 		
-		logger.error("{} - Processing Exception of type {} with message {}", LoggingUtil.getMethodName(), getClass().getName(), errMsg);
+		logger.error("{} - TransactionId: {} Processing Exception of type {} with message {}", LoggingUtil.getMethodName(), transactionId, getClass().getName(), errMsg);
 		
 		// Give the default error
 		String defaultErrorMessage = ErrorBuilder.buildErrorMessage(errMsg);
