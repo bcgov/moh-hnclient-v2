@@ -135,10 +135,9 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
-      //The purpose is to set custom unique id for logging
-    
-		new HandshakeServer(producer, properties);
+        ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);   
+		
+        new HandshakeServer(producer, properties);
 
         ClientAuthenticationBuilder clientAuthBuilder = getClientAuthentication();
         retrieveAccessToken = new RetrieveAccessToken(tokenEndpoint, scopes, clientAuthBuilder);
