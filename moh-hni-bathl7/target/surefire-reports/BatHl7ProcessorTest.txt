@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: BatHl7ProcessorTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.19 s - in BatHl7ProcessorTest
