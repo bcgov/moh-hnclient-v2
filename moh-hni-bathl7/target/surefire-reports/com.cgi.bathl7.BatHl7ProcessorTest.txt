@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.cgi.bathl7.BatHl7ProcessorTest
--------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.169 s - in com.cgi.bathl7.BatHl7ProcessorTest
