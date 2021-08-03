@@ -26,11 +26,11 @@ public class ConnectionHandler {
 
 	private Socket netSocket = null;
 
-	private static final String DEFAULT_IP = "127.0.0.0";
+	private static final String DEFAULT_IP = "127.0.0.1";
 
-	private static final String DEFAULT_PORT = "19430";
+	private static final String DEFAULT_PORT = "5555";
 	
-	private static final Logger logger = LoggerFactory.getLogger(BatHl7Processor.class);
+	private static final Logger logger = LoggerFactory.getLogger(BatHL7Processor.class);
 
 	/**
 	 * This method establishes a socket connection for each request with client on
@@ -76,24 +76,24 @@ public class ConnectionHandler {
 			throw nfe;
 		}
 		catch (UnknownHostException e) {
-			logger.debug("Unknown host");
+			logger.error("Unknown host");
 			//System.exit(0);
 		} catch (SocketException se) {
-			logger.debug("Unable to connect HNClient.");
+			logger.error("Unable to connect HNClient.");
 		}
 		finally {
 			if (socketInput != null) {
 				try {
 					socketInput.close();
 				} catch (IOException e) {
-					logger.debug("Error while connecting to client");
+					logger.error("Error while connecting to client");
 				}
 			}
 			if (socketOutput != null) {
 				try {
 					socketOutput.close();
 				} catch (IOException e) {
-					logger.debug("Error while connecting to client");
+					logger.error("Error while connecting to client");
 				}
 			}
 		}

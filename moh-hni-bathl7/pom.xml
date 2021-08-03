@@ -92,7 +92,7 @@
 								<!-- add Main-Class to manifest file -->
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>com.cgi.bathl7.BatHl7Processor</mainClass>
+									<mainClass>com.cgi.bathl7.BatHL7Processor</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>

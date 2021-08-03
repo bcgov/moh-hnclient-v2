@@ -5,6 +5,8 @@ echo -----------------------------------------
 echo *** BatchHL7 - HL7 Test Facility Starting: ***
 echo -----------------------------------------
 
-java -jar moh-hni-bathl7-2.0-SNAPSHOT.jar %*
+java -jar moh-hni-bathl7-1.0.0-SNAPSHOT.jar %*
 
-echo *** BatchHL7 - HL7 Test Facility completed: ***
+REM: print new line
+
+echo *** BatchHL7 - HL7 Test Facility completed***
