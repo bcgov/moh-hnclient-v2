@@ -5,7 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-public class Hl7xferTransaction {
+public class HL7XferTransaction {
 
 	private byte decodeSeed = 0;
 

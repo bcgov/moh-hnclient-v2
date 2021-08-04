@@ -135,7 +135,7 @@ public class BatHL7Processor {
 			while (scanner.hasNext()) {
 				String nextLine = scanner.nextLine();
 
-				if (nextLine.startsWith(Hl7xferTransaction.HEADER_INDICATOR)) {
+				if (nextLine.startsWith(HL7XferTransaction.HEADER_INDICATOR)) {
 					if (sb != null) {
 						hl7Transaction.add(sb.toString());
 					}
@@ -182,13 +182,13 @@ public class BatHL7Processor {
 		try (FileWriter fr = new FileWriter(file, true);
 				BufferedWriter br = new BufferedWriter(fr);
 				PrintWriter pr = new PrintWriter(br);) {
-			pr.println("\nBathl7 transactionn started:" + date + "\n\n");
+			pr.println("\nBathl7 transaction started:" + date + "\n\n");
 			for (String hl7Response : responseList) {
 				i++;
 				pr.println("HL7 Transaction Log: Message " + i + "\n\n");
 				pr.println(hl7Response);
 			}
-			pr.println("Bathl7 transaction completed: " + date);
+			pr.println("\nBathl7 transaction completed: " + date);
 		} catch (IOException e) {
 			throw e;
 		}
@@ -199,7 +199,7 @@ public class BatHL7Processor {
 	 */
 	protected static void logInfoMessage() {
 		logger.info(String.format(
-				"%n BATHL7 \nUsage: bathl7 input_file_name output_file_name client_address:port %n%s%n%s%n%s%n%s",
+				"BATHL7 \nUsage: bathl7 input_file_name output_file_name client_address:port %n%s%n%s%n%s%n%s",
 				"Where:", "input_file_name is the name of the input transaction file. Default is input.txt",
 				"output_file_name is the name of the output response file.",
 				"client_address:port is the ip/domain name, and port of the HNS-Client. Default is localhost:19430"));

@@ -1,6 +1,4 @@
-/**
- * 
- */
+
 package com.cgi.bathl7;
 
 import java.io.BufferedInputStream;
@@ -59,13 +57,13 @@ public class ConnectionHandler {
 			socketOutput = new BufferedOutputStream(netSocket.getOutputStream());
 
 			// Wait for data from HNClient
-			while (socketInput.available() < 1 && numSocketReadTries < Hl7xferTransaction.MAX_SOCKET_READ_TRIES) {
+			while (socketInput.available() < 1 && numSocketReadTries < HL7XferTransaction.MAX_SOCKET_READ_TRIES) {
 				numSocketReadTries++;
-				java.lang.Thread.sleep(Hl7xferTransaction.SOCKET_READ_SLEEP_TIME);
+				java.lang.Thread.sleep(HL7XferTransaction.SOCKET_READ_SLEEP_TIME);
 			}
 			// data available for read in BufferedInputStream
 			if (socketInput.available() > 0) {
-				Hl7xferTransaction conn = new Hl7xferTransaction();
+				HL7XferTransaction conn = new HL7XferTransaction();
 				conn.sendRequest(socketInput, socketOutput, v2Msg);
 				// Read response
 				transactionOut = conn.readResponse(socketInput);
