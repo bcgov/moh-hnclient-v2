@@ -8,11 +8,10 @@
 	<version>1.0.0-SNAPSHOT</version>
 
 	<properties>
-		<jdk.version>1.11</jdk.version>
+		<jdk.version>11</jdk.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
 	</properties>
+
 	<dependencies>
 		<!-- logging -->
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
@@ -64,22 +63,21 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
+				<version>3.8.1</version>
 				<configuration>
-					<source>${jdk.version}</source>
-					<target>${jdk.version}</target>
+					<release>${jdk.version}</release>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.1</version>
+				<version>2.22.2</version>
 			</plugin>
 			<!-- Maven Shade Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.3</version>
+				<version>3.2.1</version>
 				<executions>
 					<!-- Run shade goal on package phase -->
 					<execution>
@@ -88,6 +86,7 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
+							<finalName>moh-bathl7</finalName>
 							<transformers>
 								<!-- add Main-Class to manifest file -->
 								<transformer

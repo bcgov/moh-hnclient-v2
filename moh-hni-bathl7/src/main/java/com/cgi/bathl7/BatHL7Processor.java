@@ -32,8 +32,6 @@ public class BatHL7Processor {
 
 	private static final String LINE_SEPARATOR = "---------------------------------------";
 
-	private List<String> hl7Transaction;
-
 	private static final String FILE_LOCATION = "C://HNClient/";
 
 	private static final Logger logger = LoggerFactory.getLogger(BatHL7Processor.class);
@@ -44,26 +42,29 @@ public class BatHL7Processor {
 	 * @param args arg[0] inputFile args[1] the outputFile args[2] the port
 	 */
 	public static void main(String[] args) {
-		BatHL7Processor batObj = new BatHL7Processor();
+
 		String address = null;
 		String port = null;
-		List<String> hl7TransactionResponse = null;
+		List<String> hl7TransactionResponse;
 		try {
 			if (args.length < 2 || args.length > 4) {
 				logInfoMessage();
 				return;
 			}
 
-			if (args.length > 2 && StringUtils.isNotBlank(args[2]))
+			if (args.length > 2 && StringUtils.isNotBlank(args[2])) {
 				address = args[2];
+			}
 
-			if (args.length > 3 && StringUtils.isNotBlank(args[3]))
+			if (args.length > 3 && StringUtils.isNotBlank(args[3])) {
 				port = args[3];
+			}
 
 			deleteFileIfExists(args[1]);
 
-			List<String> lst = batObj.readFile(FILE_LOCATION, args[0]);
+			BatHL7Processor batObj = new BatHL7Processor();
 
+			List<String> lst = batObj.readFile(FILE_LOCATION, args[0]);
 			hl7TransactionResponse = batObj.performTransaction(lst, address, port);
 
 			batObj.writeFile(args[1], hl7TransactionResponse);
@@ -74,19 +75,18 @@ public class BatHL7Processor {
 	}
 
 	/**
-	 * @param inputFile
-	 * @param clientAddress
-	 * @param port
-	 * @throws Exception
+	 * @param v2Messages - the v2 messages to send
+	 * @param clientAddress - the HNClient address
+	 * @param port - the HNClient listening port
 	 */
-	private List<String> performTransaction(List<String> lst, String clientAddress, String port) throws Exception {
+	private List<String> performTransaction(List<String> v2Messages, String clientAddress, String port) {
 		ConnectionHandler handler = new ConnectionHandler();
-		List<String> hl7TransactionResponse = new ArrayList<String>();
+		List<String> hl7TransactionResponse = new ArrayList<>();
 		AtomicInteger count = new AtomicInteger(0);
 
-		lst.forEach(v2Msg -> {
+		v2Messages.forEach(v2Msg -> {
 			logger.info("Sending Message : {}", count.incrementAndGet());
-			String hl7Response = null;
+			String hl7Response;
 			try {
 				hl7Response = handler.socketConnection(v2Msg, clientAddress, port);
 				hl7TransactionResponse.add(formatResponse(v2Msg, hl7Response));
@@ -103,9 +103,9 @@ public class BatHL7Processor {
 	/**
 	 * Decorates the output file
 	 * 
-	 * @param request
-	 * @param response
-	 * @return
+	 * @param request - the message that was sent
+	 * @param response - the response message
+	 * @return the formatted response message
 	 */
 	private String formatResponse(String request, String response) {
 		return String.format("%s%n%n%s%s%n", request, response, LINE_SEPARATOR);
@@ -123,15 +123,16 @@ public class BatHL7Processor {
 	 * @param fileLocation the location of input file
 	 * @param file         the input file name
 	 * @return list of formatted message.
-	 * @throws IOException
+	 * @throws IOException - thrown if the file can't be found
 	 */
 	public List<String> readFile(String fileLocation, String file) throws IOException {
 
 		String fileName = fileLocation + file;
 		StringBuilder sb = null;
 
+		List<String> hl7Transaction;
 		try (Scanner scanner = new Scanner(new File(fileName))) {
-			hl7Transaction = new ArrayList<String>();
+			hl7Transaction = new ArrayList<>();
 			while (scanner.hasNext()) {
 				String nextLine = scanner.nextLine();
 
@@ -144,7 +145,7 @@ public class BatHL7Processor {
 				if (sb == null) {
 					sb = new StringBuilder();
 				}
-				sb.append(nextLine + "\n");
+				sb.append(nextLine).append("\n");
 			}
 
 		} catch (IOException fe) {
@@ -159,15 +160,11 @@ public class BatHL7Processor {
 
 	/**
 	 * Deletes the output file if already exists
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs
 	 */
 	public static void deleteFileIfExists(String fileName) throws IOException {
 		Path path = Paths.get(FILE_LOCATION + fileName);
-		try {
-			Files.deleteIfExists(path);
-		} catch (IOException e) {
-			throw e;
-		}
+		Files.deleteIfExists(path);
 	}
 
 	/**
@@ -180,9 +177,10 @@ public class BatHL7Processor {
 		int i = 0;
 
 		try (FileWriter fr = new FileWriter(file, true);
-				BufferedWriter br = new BufferedWriter(fr);
-				PrintWriter pr = new PrintWriter(br);) {
-			pr.println("\nBathl7 transaction started:" + date + "\n\n");
+			BufferedWriter br = new BufferedWriter(fr);
+			PrintWriter pr = new PrintWriter(br)
+		) {
+			pr.println("\nBathl7 transaction started: " + date + "\n\n");
 			for (String hl7Response : responseList) {
 				i++;
 				pr.println("HL7 Transaction Log: Message " + i + "\n\n");
