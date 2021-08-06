@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ConnectionHandler {
 
-	private Socket netSocket = null;
-
 	private static final String DEFAULT_IP = "127.0.0.1";
 
 	private static final String DEFAULT_PORT = "5555";
@@ -36,15 +34,15 @@ public class ConnectionHandler {
 	 * request.
 	 * Sends HL7 request messages to HNClient and receives hl7 response
 	 * messages.
-	 * @param v2Msg
+	 * @param v2Msg the message to send
 	 * @return response, received from downstream.
 	 */
 	protected String socketConnection(String v2Msg, String clientAddress,String port) throws Exception {
 
 		int numSocketReadTries = 0;
-		String transactionOut = null;
-		String ip = null;
-		String clientPort = null;
+		String transactionOut;
+		String ip;
+		String clientPort;
 		BufferedInputStream socketInput = null;
 		BufferedOutputStream socketOutput = null;
 
@@ -52,7 +50,7 @@ public class ConnectionHandler {
 			ip = (StringUtils.isBlank(clientAddress)) ? DEFAULT_IP : clientAddress;
 			clientPort = (StringUtils.isBlank(port)) ? DEFAULT_PORT : port;
 
-			netSocket = new Socket(ip, Integer.valueOf(clientPort));
+			Socket netSocket = new Socket(ip, Integer.parseInt(clientPort));
 			socketInput = new BufferedInputStream(netSocket.getInputStream(), 1000);
 			socketOutput = new BufferedOutputStream(netSocket.getOutputStream());
 
@@ -72,10 +70,8 @@ public class ConnectionHandler {
 
 		} catch (NumberFormatException nfe) {
 			throw nfe;
-		}
-		catch (UnknownHostException e) {
+		} catch (UnknownHostException e) {
 			logger.error("Unknown host");
-			//System.exit(0);
 		} catch (SocketException se) {
 			logger.error("Unable to connect HNClient.");
 		}
@@ -95,7 +91,7 @@ public class ConnectionHandler {
 				}
 			}
 		}
-		return transactionOut;
+		return null;
 
 	}
 

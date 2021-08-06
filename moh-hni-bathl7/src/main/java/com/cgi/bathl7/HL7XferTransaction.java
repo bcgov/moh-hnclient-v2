@@ -88,8 +88,6 @@ public class HL7XferTransaction {
 
 	/**
 	 * Reads response from server using hlxfer protocol
-	 * @param SOCKET_READ_SLEEP_TIME
-	 * @param MAX_SOCKET_READ_TRIES
 	 * @param socketInput
 	 */
 	protected String readResponse(BufferedInputStream socketInput) {
