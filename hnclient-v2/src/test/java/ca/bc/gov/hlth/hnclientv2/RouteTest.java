@@ -52,7 +52,7 @@ public class RouteTest extends CamelTestSupport {
         //Since we're not running from the main we need to set the properties
         PropertiesComponent pc = context.getPropertiesComponent();
         pc.setLocation("classpath:application.properties");
-
+       
         // Skip the init() steps
         Route routeMock = spy(Route.class);
         doNothing().when(routeMock).init();

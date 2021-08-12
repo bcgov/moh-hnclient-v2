@@ -1,6 +1,7 @@
 package ca.bc.gov.hlth.hnclientv2;
 
 import java.io.File;
+import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.time.LocalDate;
 
@@ -8,7 +9,6 @@ import org.apache.camel.EndpointInject;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,14 +99,12 @@ public class Route extends RouteBuilder {
      *   5. Sends the message to an http endpoint (HNS-ESB) with the JWT attached
      *   6. Returns the response to the original tcp caller
      */
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void configure() throws Exception {
         init();
 
-        onException(HttpHostConnectException.class).process(new FailureProcessor())
-        .log("Recieved body ${body}").handled(true);
-
-        onException(HttpOperationFailedException.class).process(new FailureProcessor())
+        onException(HttpHostConnectException.class, UnknownHostException.class).process(new FailureProcessor())
         .log("Recieved body ${body}").handled(true);
         
         onException(IllegalArgumentException.class).process(new FailureProcessor())
@@ -122,7 +120,7 @@ public class Route extends RouteBuilder {
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .log("Sending to HNSecure")
-            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=true").id("ToHnSecure")
+            .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
             .log("Received response from HNSecure")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")

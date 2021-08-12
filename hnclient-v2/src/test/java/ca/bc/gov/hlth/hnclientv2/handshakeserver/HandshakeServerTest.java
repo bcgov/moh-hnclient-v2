@@ -29,7 +29,7 @@ public class HandshakeServerTest {
 	 */
 	@Test
 	public void testInitConnectionHandlers_success() throws UnknownHostException, IOException, InterruptedException {
-		ServerProperties properties = initServerProperties();
+		ServerProperties properties = initServerProperties();		
 		new HandshakeServer(null, properties);
 
 		try (Socket netSocket = new Socket(LOCAL_IP_ADDRESS, properties.getServerSocket());
@@ -77,7 +77,7 @@ public class HandshakeServerTest {
 	 */
 	@Test
 	public void testInitConnectionHandlers_noThreads() throws IOException {
-		ServerProperties properties = initServerProperties();
+		ServerProperties properties = initServerProperties();		
 		// Start it on a different port since the other test cases will start
 		// ports that won't shut down until the test terminates.
 		properties.setServerSocket(5656);

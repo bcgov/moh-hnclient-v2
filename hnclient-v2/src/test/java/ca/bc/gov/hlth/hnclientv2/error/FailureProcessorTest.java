@@ -11,7 +11,6 @@ import org.apache.camel.Predicate;
 import org.apache.camel.Processor;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.apache.http.conn.HttpHostConnectException;
 import org.junit.jupiter.api.Test;
@@ -32,9 +31,6 @@ public class FailureProcessorTest extends CamelTestSupport {
 			@Override
 			public void configure() throws Exception {
 		        onException(HttpHostConnectException.class).process(new FailureProcessor())
-		        .log("Recieved body ${body}").handled(true);
-
-		        onException(HttpOperationFailedException.class).process(new FailureProcessor())
 		        .log("Recieved body ${body}").handled(true);
 		        
 		        onException(IllegalArgumentException.class).process(new FailureProcessor())
@@ -137,31 +133,6 @@ public class FailureProcessorTest extends CamelTestSupport {
 				throw new IllegalArgumentException();
 			}
 			
-		});
-	}
-	
-	@Test
-	public void testProcess_HttpOperationFailedException_400() throws Exception {
-		String expectedErrorMsg = "Bad Request";
-		Integer header = 400;
-		assertErrorMessage(v2Msg, expectedErrorMsg, header);
-	}
-	
-	@Test
-	public void testProcess_HttpOperationFailedException_500() throws Exception {
-		String expectedErrorMsg = "Internal Server Error";
-		Integer header = 500;
-		assertErrorMessage(v2Msg, expectedErrorMsg, header);
-	}
-	
-	private void assertErrorMessage(String v2Message, String expectedErrorMsg, Integer statusCode) throws Exception {
-		assertErrorMessage(v2Message, expectedErrorMsg, new Processor() {
-			
-			@Override
-			public void process(Exchange exchange) throws Exception {
-				throw new HttpOperationFailedException("", statusCode, expectedErrorMsg, "", null, "");
-				
-			}
 		});
 	}
 	
