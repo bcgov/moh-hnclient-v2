@@ -27,17 +27,6 @@
   
   <onfailure action="restart" delay="10 sec"/>
 
- <log mode="roll-by-size">
-    <sizeThreshold>10204</sizeThreshold>
-    <keepFiles>5</keepFiles>
- </log>
- 
- <!-- <log mode="roll-by-size-time">
-        <sizeThreshold>60</sizeThreshold>
-        <pattern>yyyyMMdd</pattern>
-        <autoRollAtTime>00:00:00</autoRollAtTime>
-        <zipOlderThanNumDays>5</zipOlderThanNumDays>
-        <zipDateFormat>yyyyMM</zipDateFormat>
-    </log> -->
+  <log mode="reset"></log>
 
 </configuration>
