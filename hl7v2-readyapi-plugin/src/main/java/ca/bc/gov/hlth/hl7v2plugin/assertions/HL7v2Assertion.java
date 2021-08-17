@@ -35,18 +35,20 @@ import com.eviware.x.form.XFormFactory;
 import com.eviware.x.impl.swing.JTextAreaFormField;
 import com.jgoodies.forms.layout.FormLayout;
 
-import ca.bc.gov.hlth.hl7v2plugin.HL7Parser;
+import ca.bc.gov.hlth.hl7v2plugin.HL7Utils;
 import ca.bc.gov.hlth.hl7v2plugin.Utils;
 
 /**
  * Plugin to perform assertions on HL7 content.
  * Segment identifiers, sequences and element names are taken from https://www.hl7.org/documentcenter/public/wg/conf/HL7MSH.htm.
  */
-@PluginTestAssertion(id = "HL7v2Assertion", label = "Assert HL7 Response",
+@PluginTestAssertion(id = "HL7v2Assertion", label = "Assert HL7v2 Response",
         category = AssertionCategoryMapping.VALIDATE_RESPONSE_CONTENT_CATEGORY,
         description = "Asserts specific fields in the HL7v2 message")
 public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAssertion, ResponseAssertion {
 	private static final Logger logger = LoggerFactory.getLogger(HL7v2Assertion.class);
+	
+	private static final String BLANK_PLACEHOLDER = "<blank>";
 	
 	/** The segment identifier. E.g. MSH */
 	private String segment;
@@ -77,6 +79,11 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 	    this.expectedValue = reader.readString("expectedValue", null);
 	}
 	  
+	protected String internalAssertRequest(MessageExchange messageExchange, PropertyExpansionContext context) throws AssertionException {
+		logger.debug("internalAssertRequest");
+	    return assertContent(context, messageExchange.getRequestContent(), "Request");
+	}
+  
 	public String internalAssertResponse(MessageExchange messageExchange, SubmitContext context) throws AssertionException {
 		logger.debug("internalAssertResponse");
 		return assertContent((PropertyExpansionContext) context, messageExchange.getResponseContent(), "Response");
@@ -120,11 +127,7 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 			throw new AssertionException(new AssertionError("Segment is required"));
 		}
 
-		if (!StringUtils.isNumeric(sequence)) {
-			throw new AssertionException(new AssertionError("Sequence must be numeric value greater than or equal to 1")); 
-		}
-
-		Map<String, String[]> segmentMap = HL7Parser.parseToIndexedMap(hl7v2);
+		Map<String, String[]> segmentMap = HL7Utils.parseToIndexedMap(hl7v2);
 		String[] segmentArray = segmentMap.get(segment);
 			
 		if (segmentArray == null) {
@@ -134,24 +137,42 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 		String expandedValue = PropertyExpander.expandProperties(context, this.expectedValue);		
 		logger.info("expandedValue {}", expandedValue);
 
-		String field = segmentArray[Integer.parseInt(sequence)];		
+		String field = null;
+		try {
+			field = segmentArray[Integer.parseInt(sequence)];	
+		} catch (IndexOutOfBoundsException e) {
+			throw new AssertionException(new AssertionError(String.format("No field exists at Sequence %s", sequence)));
+		} catch (NumberFormatException nfe) {
+			throw new AssertionException(new AssertionError(String.format("Sequence %s is not a valid integer", sequence))); 
+		}
+		
+		// Assert by Sequence
 		if (StringUtils.isBlank(component)) {			
 			if (!StringUtils.equals(field, expandedValue)) {
-				throw new AssertionException(new AssertionError(String.format("Content doesn't match. Expected %s Actual %s", expandedValue, field))); 
+				throw new AssertionException(new AssertionError(String.format("Content doesn't match. Expected %s Actual %s",
+						StringUtils.isNotBlank(expandedValue) ? expandedValue : BLANK_PLACEHOLDER,
+						StringUtils.isNotBlank(field) ? field : BLANK_PLACEHOLDER))); 
 			}
-			return String.format("%s-%s equals %s", segment, sequence, expandedValue);
+			return String.format("%s-%s equals %s", segment, sequence,
+					StringUtils.isNotBlank(expandedValue) ? expandedValue : BLANK_PLACEHOLDER);
 		} else {
-			if (!StringUtils.isNumeric(component)) {
-				throw new AssertionException(new AssertionError("Component must be numeric value greater than or equal to 1")); 
+			String[] components = HL7Utils.parseToComponents(field);			
+			String fieldComponent = null;
+			try {
+				fieldComponent = components[Integer.parseInt(component)];	
+			} catch (IndexOutOfBoundsException e) {
+				throw new AssertionException(new AssertionError(String.format("No field exists at Component %s", component)));
+			} catch (NumberFormatException nfe) {
+				throw new AssertionException(new AssertionError(String.format("Component %s is not a valid integer", component))); 
 			}
-			String[] components = StringUtils.split(field, HL7Parser.COMPONENT_DELIMITER);
-			String fieldComponent = components[Integer.parseInt(component)];
+
 			if (!StringUtils.equals(fieldComponent, expandedValue)) {
-				throw new AssertionException(new AssertionError(String.format("Content doesn't match. Expected %s Actual %s", expandedValue, fieldComponent))); 
+				throw new AssertionException(new AssertionError(String.format("Content doesn't match. Expected %s Actual %s",
+						StringUtils.isNotBlank(expandedValue) ? expandedValue : BLANK_PLACEHOLDER, StringUtils.isNotBlank(fieldComponent) ? fieldComponent : BLANK_PLACEHOLDER))); 
 			}
-			return String.format("%s-%s.%s equals %s", segment, sequence, expandedValue);
+			return String.format("%s-%s.%s equals %s", segment, sequence, component,
+					StringUtils.isNotBlank(expandedValue) ? expandedValue : BLANK_PLACEHOLDER);
 		}
-			 
 	}
 	  
 	public boolean configure() {
@@ -240,27 +261,17 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 	  protected void buildDialog() {
 	    XFormDialogBuilder builder = XFormFactory.createDialogBuilder("HL7v2 Assertion");
 	    XForm mainForm = builder.createForm("Basic", new FormLayout("5px,left:pref,5px,fill:default:grow(1.0),5px"));
-	    //JPanel mainFormPanel = ((SwingXFormImpl)mainForm).getPanel();
-	   // FormLayout mainFormLayout = (FormLayout)mainFormPanel.getLayout();
-	    //this.contentField = (JTextAreaFormField)mainForm.addTextField("Content", "Content to check for", XForm.FieldType.TEXTAREA);
-	    //this.contentField.setWidth(40);
-	    //mainFormLayout.setRowSpec(mainFormLayout.getRowCount(), new RowSpec("top:default:grow(1.0)"));
-	    //mainFormPanel.add(mainFormPanel.getComponent((mainFormPanel.getComponents()).length - 1), (new CellConstraints()).xy(4, mainFormLayout.getRowCount(), "fill,fill"));
-	    
+
 	    mainForm.addTextField("Segment", "Segment identifier", XForm.FieldType.TEXT);
 	    mainForm.addTextField("Sequence", "Field Sequence", XForm.FieldType.TEXT);
 	    mainForm.addTextField("Component", "Component", XForm.FieldType.TEXT);
-	    
-	    // This feature might be confusing so leave it out for now
+
+	    // XXX This feature might be confusing so leave it out for now
 	    //String[] comboValues = (String[]) ArrayUtils.addAll(new String[] {""}, HL7Parser.MSH_ELEMENT_NAMES, HL7Parser.MSA_ELEMENT_NAMES);
 	    //mainForm.addComboBox("Element Name", comboValues, "Field Name");
 	    mainForm.addTextField("Expected Value", "Expected Value", XForm.FieldType.TEXT);
 
 	    this.dialog = builder.buildDialog(builder.buildOkCancelActions(), null, null);
-	  }
-	  
-	  protected String internalAssertRequest(MessageExchange messageExchange, PropertyExpansionContext context) throws AssertionException {
-	    return assertContent(context, messageExchange.getRequestContent(), "Request");
 	  }
 	  
 	  public PropertyExpansion[] getPropertyExpansions() {

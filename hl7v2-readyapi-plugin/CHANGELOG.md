@@ -8,28 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Todo
-- Use timeout settings
-- Update to ReadyAPI v.3.8.0 libraries
+- Remove Client/ClientCache/Connection classes as they are no longer used
+- Use timeout settings when sending HL7 to HN Client
 - Increase TextArea sizes in request/response windows
 
 
-### Added 
-
-### Changed
-
-### Removed
-
-### Fixed
-
-## [0.3.0] - 2021-09-13
+## [0.3.0] - 2021-09-17
 ### Added
 - Added Encode HL7v2 Test Step which will encode the fileContent from the DataSource and make it available as a test case property
+- Added Decode HL7v2 Assertion which will extract and decode the HL7v2 Response and make it available as a test case property
+- Added Assert HL7v2 Response Assertion will will allow assertions to be performed on the HL7v2 Segment/Sequence/Component
 
 ### Changed
-- 3.9.1
-
-### Known Issues
-- Icon for Encode HL7v2 Test Step doesn't show in step list view
+- Updated to ReadyAPI v.3.9.1 libraries
 
 ## [0.2.3] - 2021-06-01
 
