@@ -14,4 +14,6 @@ mock-point-of-service/target/
 mock-point-of-service/.idea/*
 mock-point-of-service/.classpath
 moh-hni-bathl7/target/
-
+hl7v2-readyapi-plugin/target/
+hl7v2-readyapi-plugin/.classpath
+hl7v2-readyapi-plugin/.settings
