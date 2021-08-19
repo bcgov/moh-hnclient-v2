@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import com.eviware.soapui.config.TestAssertionConfig;
 import com.eviware.soapui.impl.wsdl.panels.assertions.AssertionCategoryMapping;
+import com.eviware.soapui.impl.wsdl.teststeps.RestTestRequest;
 import com.eviware.soapui.impl.wsdl.teststeps.WsdlMessageAssertion;
 import com.eviware.soapui.model.TestPropertyHolder;
 import com.eviware.soapui.model.iface.MessageExchange;
@@ -43,21 +44,22 @@ public class DecodeHL7v2Assertion extends WsdlMessageAssertion implements Reques
 	}
 
 	public String internalAssertResponse(MessageExchange messageExchange, SubmitContext context) throws AssertionException {
-		return decode(context);
+		return decode(messageExchange, context);
 	}
 
 	protected String internalAssertProperty(TestPropertyHolder source, String propertyName, MessageExchange messageExchange,
 			SubmitContext context) throws AssertionException {
-		decode(context);
+		decode(messageExchange, context);
 		return "OK";
 	}
 
-	private String decode(SubmitContext context) {
+	private String decode(MessageExchange messageExchange, SubmitContext context) {
 		String response = context.expand("${REST Request#Response}");
 		logger.debug("Decoding JSON response {}", response);
 		String decodedMsg = Utils.extractDecodedHL7v2(response);
 		logger.debug("Decoded HL7v2 {}", decodedMsg);
 		context.setProperty("decodedHL7v2Response", decodedMsg);
+		((RestTestRequest)messageExchange.getModelItem()).getTestCase().setPropertyValue("decodedHL7v2Response", decodedMsg);
 		return decodedMsg;
 	}
 	  

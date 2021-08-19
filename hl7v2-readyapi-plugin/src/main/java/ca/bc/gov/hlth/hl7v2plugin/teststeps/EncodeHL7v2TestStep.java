@@ -1,5 +1,7 @@
 package ca.bc.gov.hlth.hl7v2plugin.teststeps;
 
+import java.util.Map;
+
 import javax.swing.ImageIcon;
 
 import org.apache.commons.lang3.StringUtils;
@@ -26,15 +28,17 @@ import com.eviware.soapui.security.SecurityTestRunner;
 import com.eviware.soapui.support.UISupport;
 
 import ca.bc.gov.hlth.hl7v2plugin.CancellationToken;
+import ca.bc.gov.hlth.hl7v2plugin.HL7Utils;
 import ca.bc.gov.hlth.hl7v2plugin.PluginConfig;
 import ca.bc.gov.hlth.hl7v2plugin.Utils;
+import ca.bc.gov.hlth.hl7v2plugin.teststeps.actions.RunTestStepAction;
 import ca.bc.gov.hlth.hl7v2plugin.teststeps.actions.groups.EncodeHL7v2TestStepActionGroup;
 
 @SuppressWarnings("deprecation")
 @PluginTestStep(typeName = "encodeHL7v2DataSourceTestStep", name = "Encode HL7v2",
         description = "Base64 encodes the HL7v2 message loaded from a Data Source",
         iconPath = "ca/bc/gov/hlth/hl7v2plugin/encode_hl7_step.png")
-public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements TestMonitorListener {
+public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements TestMonitorListener, ExecutableTestStep {
 
     private static final  Logger logger = LoggerFactory.getLogger(PluginConfig.LOGGER_NAME);
     
@@ -91,7 +95,17 @@ public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements T
 	    	if (!StringUtils.startsWith(hl7v2, MSH_SEGMENT)) {
 	    		throw new IllegalArgumentException("Data Source does not contain an HL7 V2 message");
 	    	}
-	
+	    	
+	    	// Store some commonly queried request fields for later use
+	    	Map<String, String[]> segments = HL7Utils.parseToIndexedMap(hl7v2);
+	    	String[] mshSegments = segments.get(HL7Utils.SEGMENT_MSH);
+	    	testCase.setPropertyValue("hl7RequestSendingApplication", mshSegments[3]);
+	    	testCase.setPropertyValue("hl7RequestSendingFacility", mshSegments[4]);
+	    	testCase.setPropertyValue("hl7RequestSecurity", mshSegments[8]);
+	    	testCase.setPropertyValue("hl7RequestMessageType", mshSegments[9]);
+	    	testCase.setPropertyValue("hl7RequestMessageType", mshSegments[9]);
+	    	testCase.setPropertyValue("hl7RequestMessageControlID", mshSegments[10]);
+
 	    	String encodedMsg = Utils.encode(hl7v2);
 	    	
 	    	logger.info("Encoded msg {}", encodedMsg);
@@ -189,5 +203,22 @@ public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements T
 	@Override
 	public void testSuiteFinished(TestSuiteRunner testSuiteRunner) {
 		logger.info("testSuiteFinished");
+	}
+
+	@Override
+	public void addExecutionListener(ExecutionListener listener) {
+		// TODO Auto-generated method stub
+		
+	}
+
+    @Override
+    public ExecutableTestStepResult execute(SubmitContext runContext, CancellationToken cancellationToken) {
+    	return doExecute(runContext, cancellationToken);
+    }
+
+	@Override
+	public void removeExecutionListener(ExecutionListener listener) {
+		// TODO Auto-generated method stub
+		
 	}
 }

@@ -8,10 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Todo
+- Add the ability to Run the Encode HLyV2 Test Step independently
 - Remove Client/ClientCache/Connection classes as they are no longer used
 - Use timeout settings when sending HL7 to HN Client
 - Increase TextArea sizes in request/response windows
 
+## [0.3.1] - 2021-09-19
+
+### Changed
+- Updated Encode HL7v2 Test Step to create Test Case properties from the HL7 request
+- Updated Decoded HL7v2 to add the encodedHL7v2Msg as a Test Case property in addition to a context property
 
 ## [0.3.0] - 2021-09-17
 ### Added
