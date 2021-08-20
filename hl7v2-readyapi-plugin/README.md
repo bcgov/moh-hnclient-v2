@@ -14,7 +14,10 @@ The plugin has been tested on ReadyAPI 3.9.1.
 2. Navigate to the Integrations tab
 3. Select **Install from File...**
 4. Select the HL7 V2 Plugin (e.g. hl7v2-readyapi-plugin-0.3.0-SNAPSHOT.jar) that was downloaded (or built from source)
-5. A confirmation dialog will be shown
+5. You should get a confirmation message "Plugin HL7 V2 Support Plugin installed successfully."
+6. Click OK
+7. The plugin should now display under Enhancements in the Manage Installed Integrations panel
+8. Navigate to an existing TestSuite/TestCase (or create a new one) and you should now see the HL7 icon in the Test Steps toolbar as well as Publish HL7v2 to HNClient under Add Step
 
 ### Updates
 If you are updating an existing version of the plugin which has been used in Projects, you must perform the following steps before installing the plugin.
@@ -28,7 +31,10 @@ If you are updating an existing version of the plugin which has been used in Pro
 ## SoapUI
 Note, the plugin is not actively tested in SoapUI and may not be fully functional.
 
-1. Download or build the plugin JAR file and copy it to `<user home>/.soapui/plugins/` .
+1. Download or build the plugin JAR file and copy it to c:\Users\<username>\.soapuios\plugins where <username> is your Windows username
+2. Launch SoapUI
+3. Select an existing TestSuite/TestCase or create a new one if it doesn't exist
+4. Right click→Add Step and you should see a Publish HL7v2 to HNClient option
 
 # Features
 ## Test Steps
@@ -49,13 +55,27 @@ When running the Test Step, the plugin will look for an endpoint name HNS Client
 
 ##### Configure Test Step
 1. (Optional) Define a Data Source Test Step with your input file(s)
-2. Insert Step -> Publish HL7v2 To HNClient
-3. Accept the default name or create your own
-4. Verify that the Endpoint is correctly displayed for your current Environment. If it is not, then there is likely an issue with your Environment set up.
-5. Under **Published Message** select Message type: Text
-6. If you are using a Data Source Test Step then enter ${Data Source#fileContent} in the Message: textarea. Otherwise you can use a hard-coded message
-7. Use the default Message Delivering Settings
-8. Configure your Assertions
+2. Create a new Test Case (for example: Successful-R03)
+3. Right click on API and select Create API Definition
+4. Enter API name as **HNS Client** and select Protocol REST
+5. Select Create API
+6. Configure each of your environments by adding an Endpoint for **HNS Client** in the format
+7. Right click on the Test Case and select "Add Step". Choose "Publish Hl7v2 to HNClient".
+8. You should see the test step appear. You can rename it however you want.
+9. Focus on the test step by clicking on it.
+
+10. On the right panel you should see Four different parts:
+	- Endpoint: This is read from the Endpoint entry for **HNS Client** in the current Environment. If it's blank then there is an issue with your configuration.
+	- Published Message: Here you can either select the type "text" or "Content of Folder". 
+	  > "Text": If you select this type then you can paste one message in the "Message" text area below.
+	  > "Content of Folder": If you select this one then  in "Folder Name" you will need to provide the path to the folder that contains the messages. 
+	     Each message should be in its own individual .txt file. You can organize your messages in different subfolders and create as many .txt files as you want.
+	- If you select Text you can utilize a Data Source instead of a hard-coded message by entering only *${Data Source#fileContent}*. You will need to have a Data Source step correctly configured (with fileName and fileContent) as the previous step
+	- Message Delivering Settings: The timeout isn't currently used
+	- Received Message: Here you will either see the full response from the one message you sent (Type "text") or you will see a short sentence confirming that everything was sent and that you can now consult the output files containing the responses (Type "Content of Folder"). The output files will be at the same location as the input files that you provided in "Published Message". Their name will be suffixed with "_out"
+	
+11. When everything is ready, click on the green Play button to run the test
+12. If everything worked well then you should see the Response, Assertions status and overall status
 
 #### Variable substitution
 You can use the following placeholders in your input files and they will be replaced at runtime with a matching Project level property of the same name:
@@ -107,10 +127,16 @@ This assertion extracts and decodes the HL7 from a application/fhir+json respons
 2. The properties ${#TestCase#decodedHL7v2Response} in subsequent assertions. It is also available as a context property ${decodedHL7v2Response} are now available in subsequent assertions
 
 ### Assert HL7
-This assertion allows you to assert specific parts of an HLy V2 message down to the component level.
+This assertion allows you to assert specific parts of an HL7 V2 message down to the component level.
 
 #### Usage
+The Assertion contains 4 fields:
+* Segment - The name of the HL7 segment to compare (e.g. MSH). Required.
+* Sequence - The sequence of the field to compare. 1-based index. Required.
+* Component - The component of a field to compare. 1-based index. Only use if the field is broken down to Component level (via ^ delimiters). Optional.
+* Expected Value - The expected value at the given Segment/Sequence/Component. This can be a hard-coded value or a property (Test Case property or Properties property)
 
+Note, the assertion does not currently support repeating segments. If a segment is repeated, the last occurrence will be used for comparison.
 
 # Configuration
 These steps apply when you are building the plugin from source. If you have been provided with a distribution of the plugin then follow the Installation steps.
@@ -128,29 +154,3 @@ Run mvn install
 ```
 4. This will create a versioned jar (e.g. hl7v2-readyapi-plugin-0.3.0-SNAPSHOT.jar) under the the target directory
 5. This jar can be distributed or installed in ReadyAPI/SoapUI
-
-## How to use (Considering your SoapUI is working and you have created a new project):
-
-- Create a new Test Case (for example: Successful-R03)
-- Right click on API and select Create API Definition
-- Enter API name as **HNS Client** and select Protocol REST
-- Select Create API
-- Configure each of your environments by adding an Endpoint for **HNS Client** in the format
-- Right click on the Test Case and select "Add Step". Choose "Publish Hl7v2 to HNClient".
-- You should see the test step appear. You can rename it however you want.
-- Focus on the test step by clicking on it.
-
-- On the right panel you should see Four different parts:
-	- Endpoint: This is read from the Endpoint entry for **HNS Client** in the current Environment. If it's blank then there is an issue with your configuration.
-	- Published Message: Here you can either select the type "text" or "Content of Folder". 
-	  > "Text": If you select this type then you can paste one message in the "Message" text area below.
-	  > "Content of Folder": If you select this one then  in "Folder Name" you will need to provide the path to the folder that contains the messages. 
-	     Each message should be in its own individual .txt file. You can organize your messages in different subfolders and create as many .txt files as you want.
-	- If you select Text you can utilize a Data Source instead of a hard-coded message by entering only *${Data Source#fileContent}*. You will need to have a Data Source step correctly configured (with fileName and fileContent) as the previous step
-	- Message Delivering Settings: The timeout isn't currently used
-	- Received Message: Here you will either see the full response from the one message you sent (Type "text") or you will see a short sentence confirming that everything was sent and that you can now consult the output files containing the responses (Type "Content of Folder"). The output files will be at the same location as the input files that you provided in "Published Message". Their name will be suffixed with "_out"
-	
-- When everything is ready, click on the green Play button to run the test
-
-- If everything worked well then you should see the Response, Assertions status and overall status
-

@@ -31,7 +31,6 @@ import ca.bc.gov.hlth.hl7v2plugin.CancellationToken;
 import ca.bc.gov.hlth.hl7v2plugin.HL7Utils;
 import ca.bc.gov.hlth.hl7v2plugin.PluginConfig;
 import ca.bc.gov.hlth.hl7v2plugin.Utils;
-import ca.bc.gov.hlth.hl7v2plugin.teststeps.actions.RunTestStepAction;
 import ca.bc.gov.hlth.hl7v2plugin.teststeps.actions.groups.EncodeHL7v2TestStepActionGroup;
 
 @SuppressWarnings("deprecation")

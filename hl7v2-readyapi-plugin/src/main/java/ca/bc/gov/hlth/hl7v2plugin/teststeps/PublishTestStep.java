@@ -49,7 +49,6 @@ import com.eviware.soapui.model.iface.SubmitContext;
 import com.eviware.soapui.model.iface.SubmitListener;
 import com.eviware.soapui.model.mock.MockRunner;
 import com.eviware.soapui.model.support.DefaultTestStepProperty;
-import com.eviware.soapui.model.support.ProjectListenerAdapter;
 import com.eviware.soapui.model.support.TestStepBeanProperty;
 import com.eviware.soapui.model.testsuite.Assertable;
 import com.eviware.soapui.model.testsuite.AssertionError;
