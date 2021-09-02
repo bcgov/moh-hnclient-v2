@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use timeout settings when sending HL7 to HN Client
 - Increase TextArea sizes in request/response windows
 
+## [0.3.2] - 2021-09-01
+
+### Changed
+- The full list of MSH fields are available as Test Case properties
+- ZCB-1 (pharmacy) is available as a Test Case property for Pharmanet messages
+- PHN is available as a Test Case property. Either from PID or ZCC
+- The descriptive text for the Encode HL7v2 is updated to be more detailed
+- The existing Assert HL7v2 Assertion can be used against raw HL7 V2 responses (in addition to the existing fhir+json) responses
+
+### Known Issues
+- When modifying an Assertion used in the Publish HL7v2 to HNClient Test Step, if the assertion still fails but in a different
+way then the Failure text does not refresh. If you modify it so it goes from Pass -> Fail or Fail -> Pass, there is no issue.
+
 ## [0.3.1] - 2021-09-20
 
 ### Changed

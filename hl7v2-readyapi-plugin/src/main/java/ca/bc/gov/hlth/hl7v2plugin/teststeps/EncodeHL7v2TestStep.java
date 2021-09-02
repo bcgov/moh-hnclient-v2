@@ -40,12 +40,9 @@ import ca.bc.gov.hlth.hl7v2plugin.teststeps.actions.groups.EncodeHL7v2TestStepAc
 public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements TestMonitorListener, ExecutableTestStep {
 
     private static final  Logger logger = LoggerFactory.getLogger(PluginConfig.LOGGER_NAME);
-    
-    private static final String MSH_SEGMENT = "MSH";
 
     private static boolean actionGroupAdded = false;
 
-    /** Icons */
     private ImageIcon baseIcon;
     
     private WsdlTestCase testCase;
@@ -91,19 +88,33 @@ public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements T
 	
 	    	logger.info("HL7V2 " + hl7v2);
 	    	
-	    	if (!StringUtils.startsWith(hl7v2, MSH_SEGMENT)) {
+	    	if (!StringUtils.startsWith(hl7v2, HL7Utils.SEGMENT_MSH)) {
 	    		throw new IllegalArgumentException("Data Source does not contain an HL7 V2 message");
 	    	}
 	    	
-	    	// Store some commonly queried request fields for later use
+	    	// Store some commonly queried MSH request fields for later use
 	    	Map<String, String[]> segments = HL7Utils.parseToIndexedMap(hl7v2);
 	    	String[] mshSegments = segments.get(HL7Utils.SEGMENT_MSH);
+	    	String messageType = mshSegments[9];
 	    	testCase.setPropertyValue("hl7RequestSendingApplication", mshSegments[3]);
 	    	testCase.setPropertyValue("hl7RequestSendingFacility", mshSegments[4]);
+	    	testCase.setPropertyValue("hl7RequestReceivingApplication", mshSegments[5]);
+	    	testCase.setPropertyValue("hl7RequestReceivingFacility", mshSegments[6]);
+	    	testCase.setPropertyValue("hl7RequestDateTimeOfMessage", mshSegments[7]);
 	    	testCase.setPropertyValue("hl7RequestSecurity", mshSegments[8]);
-	    	testCase.setPropertyValue("hl7RequestMessageType", mshSegments[9]);
-	    	testCase.setPropertyValue("hl7RequestMessageType", mshSegments[9]);
+	    	testCase.setPropertyValue("hl7RequestMessageType", messageType);
 	    	testCase.setPropertyValue("hl7RequestMessageControlID", mshSegments[10]);
+	    	testCase.setPropertyValue("hl7RequestProcessingID", mshSegments[11]);
+	    	
+	    	// MSH-12 can have multiple components
+	    	String[] versionIDComponents = HL7Utils.parseToComponents(mshSegments[12]);
+	    	testCase.setPropertyValue("hl7RequestVersionID", versionIDComponents[1]);
+
+	    	// Parse the PHN
+	    	parsePHN(segments, messageType);
+
+	    	// Parse the Pharmacy ID for Pharmanet
+	    	parsePharmacyID(segments, messageType);
 
 	    	String encodedMsg = Utils.encode(hl7v2);
 	    	
@@ -124,6 +135,44 @@ public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements T
             SoapUI.log(String.format("%s - [%s test step]", result.getOutcome(), getName()));
         }
     	return result;
+    }
+    
+    private void parsePharmacyID(Map<String, String[]> segments, String messageType) {
+    	String pharmacyIDCode = null;
+    	if (StringUtils.equals(messageType, HL7Utils.MESSAGE_TYPE_ZPN)) {
+    		String[] zcbSegments = segments.get(HL7Utils.SEGMENT_ZCB);
+    		if (zcbSegments == null || zcbSegments.length < 2) {
+    			logger.warn("Could not parse ZCB segment from Pharmanet (ZPN) message");
+    		} else {
+    			pharmacyIDCode = zcbSegments[1];
+    		}	
+    	}    	
+		testCase.setPropertyValue("hl7RequestPharmacyIDCode", pharmacyIDCode);
+    }
+    
+    private void parsePHN(Map<String, String[]> segments, String messageType) {
+    	String phn = null;
+    	
+    	// First check the PID
+    	String[] pidSegments = segments.get(HL7Utils.SEGMENT_PID);
+    	if (pidSegments != null && pidSegments.length >= 3) {
+    		String patientID = pidSegments[2];
+    		if (StringUtils.isNotBlank(patientID)) {
+    			String[] patientIDComponents = HL7Utils.parseToComponents(patientID);
+    			if (patientIDComponents != null && patientIDComponents.length >= 1) {
+    				phn = patientIDComponents[1];
+    			}
+    		}
+    	} else if (StringUtils.equals(messageType, HL7Utils.MESSAGE_TYPE_ZPN)){
+    		// Second check ZCC for Pharmanet
+    		String[] zccSegments = segments.get(HL7Utils.SEGMENT_ZCC);
+    		if (zccSegments == null || zccSegments.length < 11) {
+    			logger.warn("Could not parse ZCB segment from Pharmanet (ZPN) message");
+    		} else {
+    			phn = zccSegments[10];
+    		}
+    	}
+    	testCase.setPropertyValue("hl7RequestPHN", phn);
     }
 
     protected void initIcons() {
@@ -169,55 +218,54 @@ public class EncodeHL7v2TestStep extends WsdlTestStepWithProperties implements T
 
 	@Override
 	public void testCaseFinished(TestCaseRunner runner) {
-		logger.info("testCaseFinished");
+		logger.debug("testCaseFinished");
 	}
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void mockServiceStarted(MockRunner runner) {
-		logger.info("mockServiceStarted");
+		logger.debug("mockServiceStarted");
 	}
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void mockServiceStopped(MockRunner runner) {
-		logger.info("mockServiceStopped");
+		logger.debug("mockServiceStopped");
 	}
 
 	@Override
 	public void projectStarted(ProjectRunner projectRunner) {
-		logger.info("projectStarted");
+		logger.debug("projectStarted");
 	}
 
 	@Override
 	public void projectFinished(ProjectRunner projectRunner) {
-		logger.info("projectFinished");
+		logger.debug("projectFinished");
 	}
 
 	@Override
 	public void testSuiteStarted(TestSuiteRunner testSuiteRunner) {
-		logger.info("testSuiteStarted");
+		logger.debug("testSuiteStarted");
 	}
 
 	@Override
 	public void testSuiteFinished(TestSuiteRunner testSuiteRunner) {
-		logger.info("testSuiteFinished");
+		logger.debug("testSuiteFinished");
 	}
 
 	@Override
 	public void addExecutionListener(ExecutionListener listener) {
-		// TODO Auto-generated method stub
-		
+		logger.debug("addExecutionListener");
 	}
 
     @Override
     public ExecutableTestStepResult execute(SubmitContext runContext, CancellationToken cancellationToken) {
+    	logger.debug("execute");
     	return doExecute(runContext, cancellationToken);
     }
 
 	@Override
 	public void removeExecutionListener(ExecutionListener listener) {
-		// TODO Auto-generated method stub
-		
+		logger.debug("removeExecutionListener");
 	}
 }

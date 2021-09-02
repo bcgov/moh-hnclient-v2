@@ -14,15 +14,21 @@ import org.slf4j.LoggerFactory;
  * Utility class for working with HL7v2 structure.
  */
 public class HL7Utils {
-	private static final Logger logger = LoggerFactory.getLogger(HL7Utils.class);
+	private static final Logger logger = LoggerFactory.getLogger(PluginConfig.LOGGER_NAME);
+
 	private static final String LINE_BREAK = "\n";
 	private static final String CARRIAGE_RETURN_LINE_BREAK = "\r\n";
+	private final static String COMPONENT_DELIMITER = "^";
 
 	public final static String FIELD_DELIMITER = "|";
-	private final static String COMPONENT_DELIMITER = "^";
-		
+	
+	public static final String MESSAGE_TYPE_ZPN = "ZPN";
+	
 	public static final String SEGMENT_MSA = "MSA";
     public static final String SEGMENT_MSH = "MSH";
+    public static final String SEGMENT_PID = "PID";
+    public static final String SEGMENT_ZCB = "ZCB";
+    public static final String SEGMENT_ZCC = "ZCC";
 
 	public static final String[] MSA_ELEMENT_NAMES = new String[] {"Acknowledgement Code", "Message Control ID", "Text Message", "Expected Sequence Number",
 			"Delayed Acknowledgement Type", "Error Condition", "Message Waiting Number", "Message Waiting Priority"};
