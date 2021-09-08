@@ -145,6 +145,7 @@ public class Route extends RouteBuilder {
         if (clientAuthType.equals(CLIENT_AUTH_TYPE_SIGNED_JWT)) {
             return new SignedJwtBuilder(new File(jksFilePath), keyAlias, tokenEndpoint, keystorePassword);
         } else if (clientAuthType.equals(CLIENT_AUTH_TYPE_CLIENT_ID_SECRET)) {
+        	clientId = (System.getenv("MOH_HNCLIENT_ID")!=null) ? System.getenv("MOH_HNCLIENT_ID") : clientId;
             return new ClientIdSecretBuilder(clientId, clientSecret);
         } else {
             throw new IllegalStateException(String.format("Unrecognized client authentication type: '%s'", clientAuthType));

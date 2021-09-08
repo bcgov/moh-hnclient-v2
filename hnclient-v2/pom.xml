@@ -191,6 +191,8 @@
 							<exclude>META-INF/*.RSA</exclude>
 							<exclude>**/application.properties</exclude>
 							<exclude>**/log4j2.properties</exclude>
+							<exclude>**/configure-hni.bat</exclude>
+							<exclude>**/HNS-Client.exe</exclude>
 						</excludes>
 					</filter>
 				</filters>
