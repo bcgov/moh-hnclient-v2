@@ -5,7 +5,7 @@ import com.eviware.soapui.plugins.PluginConfiguration;
 import com.eviware.soapui.support.UISupport;
 
 @PluginConfiguration(category = "Enhancements", groupId = "com.smartbear.plugins", name = "HL7 V2 Support Plugin",
-        version = "0.3.2", autoDetect = true, description = "Adds HL7 V2 Test Steps to ReadyAPI", minimumReadyApiVersion = "3.7.0", infoUrl = "")
+        version = "0.3.3", autoDetect = true, description = "Adds HL7 V2 Test Steps to ReadyAPI", minimumReadyApiVersion = "3.7.0", infoUrl = "")
 public class PluginConfig extends PluginAdapter {
 
     public final static int DEFAULT_TCP_PORT = 80;
