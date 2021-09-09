@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.slf4j.Logger;
@@ -205,7 +206,7 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
 
     private boolean checkProperties(WsdlTestStepResult result, PublishedMessageType messageTypeToCheck,
             String messageToCheck) {
-    	logger.info("checkProperties");
+    	logger.debug("checkProperties");
         boolean ok = true;
         if (messageTypeToCheck == null) {
             result.addMessage("The message format is not specified.");
@@ -225,7 +226,7 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
 
     @Override
     protected ExecutableTestStepResult doExecute(SubmitContext testRunContext, CancellationToken cancellationToken) {
-    	logger.info("doExecute");
+    	logger.debug("doExecute");
         ExecutableTestStepResult result = new ExecutableTestStepResult(this);
         result.startTimer();
         result.setStatus(TestStepResult.TestStepStatus.UNKNOWN);
@@ -317,7 +318,7 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
 
                     //Checking assertions
                     for (WsdlMessageAssertion assertion : assertionsSupport.getAssertionList()) {
-                    	logger.info("Checking assertion {} ", assertion.getDescription());
+                    	//logger.info("Checking assertion {} ", assertion.getDescription());
                         //applyAssertion(assertion, testRunContext);
                        // failed = assertion.isFailed();
                     }
@@ -567,11 +568,10 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
 
     public void setResponse(String value) {
         setProperty("response", RECEIVED_MESSAGE_PROP_NAME, value);
-        logger.info("setResponse {}", value);
     }
     
     public void assertResponse(SubmitContext context) {
-        
+        logger.debug("assertResponse");
         for (WsdlMessageAssertion assertion : assertionsSupport.getAssertionList()) {
             applyAssertion(assertion, context);
         }
@@ -658,15 +658,17 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
         }
         
         public void notifyChange() {
-        logger.info("notifyChange");
-          Assertable.AssertionStatus newStatus = getAssertionStatus();
-          ImageIcon newIcon = getIcon();
-          if (this.oldStatus != newStatus)
-            notifyPropertyChanged(RestTestRequest.STATUS_PROPERTY, this.oldStatus, newStatus); 
-          if (this.oldIcon != newIcon)
-            notifyPropertyChanged(RestTestRequest.ICON_PROPERTY, this.oldIcon, getIcon()); 
-          this.oldStatus = newStatus;
-          this.oldIcon = newIcon;
+        	logger.debug("notifyChange");
+        	Assertable.AssertionStatus newStatus = getAssertionStatus();
+        	ImageIcon newIcon = getIcon();
+        	if (this.oldStatus != newStatus) {
+        		notifyPropertyChanged(RestTestRequest.STATUS_PROPERTY, this.oldStatus, newStatus);
+        	}
+        	if (this.oldIcon != newIcon) {
+        		notifyPropertyChanged(RestTestRequest.ICON_PROPERTY, this.oldIcon, getIcon());
+        	}
+        	this.oldStatus = newStatus;
+        	this.oldIcon = newIcon;
         }
         
         public void updateProperties() {
@@ -795,7 +797,7 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
 
 	@Override
 	public TestAssertion addAssertion(String selection) {
-		logger.info("Adding assertion");
+		logger.debug("addAssertion");
 		getNotifier().updateProperties();
 		try {
 			WsdlMessageAssertion assertion = assertionsSupport.addWsdlAssertion(selection);
@@ -818,7 +820,7 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
 
 	@Override
 	public void removeAssertion(TestAssertion assertion) {
-		logger.info("removeAssertion");
+		logger.debug("removeAssertion");
 		getNotifier().updateProperties();
 		try {
 			assertionsSupport.removeAssertion((WsdlMessageAssertion) assertion);
@@ -867,6 +869,7 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
     }
 
     private void assertReceivedMessage() {
+    	logger.info("assertReceivedMessage");
         if (getResponse() != null) {
             for (WsdlMessageAssertion assertion : assertionsSupport.getAssertionList()) {
                 applyAssertion(assertion, new WsdlSubmitContext(this));
@@ -984,7 +987,6 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
         public String getRequestContent() {
         	logger.info("getRequestContent");
         	return getModelItem().getProperty(RECEIVED_MESSAGE_PROP_NAME).getValue();
-            //return null;
         }
 
         @Override
@@ -1091,36 +1093,36 @@ public class PublishTestStep extends ConnectedTestStep implements Assertable, Te
   
   @Override
   public void testCaseFinished(TestCaseRunner runner) {
-	  logger.info("testCaseFinished");
+	  logger.debug("testCaseFinished");
   }
 
   @Override
   public void mockServiceStarted(MockRunner runner) {
-	  logger.info("mockServiceStarted");
+	  logger.debug("mockServiceStarted");
   }
 
   @Override
   public void mockServiceStopped(MockRunner runner) {
-	  logger.info("mockServiceStopped");
+	  logger.debug("mockServiceStopped");
   }
   
   @Override
   public void projectStarted(ProjectRunner projectRunner) {
-    logger.info("projectStarted");
+    logger.debug("projectStarted");
   }
 
   @Override
   public void projectFinished(ProjectRunner projectRunner) {
-    logger.info("projectFinished");
+    logger.debug("projectFinished");
   }
 
   @Override
   public void testSuiteStarted(TestSuiteRunner testSuiteRunner) {
-    logger.info("testSuiteStarted");
+    logger.debug("testSuiteStarted");
   }
 
   @Override
   public void testSuiteFinished(TestSuiteRunner testSuiteRunner) {
-    logger.info("testSuiteFinished");
+    logger.debug("testSuiteFinished");
   }
 }

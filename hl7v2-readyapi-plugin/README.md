@@ -86,9 +86,16 @@ This steps encodes the content of a Data Source and makes it available as #{#Tes
 *  encodedHL7v2Msg - Encoded HL7v2Message
 *  hl7RequestSendingApplication - MSH-3
 *  hl7RequestSendingFacility - MSH-4
+*  hl7RequestReceivingApplication - MSH-5
+*  hl7RequestReceivingFacility - MSH-6
+*  hl7RequestDateTimeOfMessage - MSH-7
 *  hl7RequestSecurity - MSH-8
 *  hl7RequestMessageType - MSH-9
 *  hl7RequestMessageControlID - MSH-10
+*  hl7RequestProcessingID - MSH-11
+*  hl7RequestVersionID - MSH-12
+*  hl7RequestPharmacyIDCode - ZCB-1. For pharmanet messages only
+*  hl7RequestPHN - From PID-2.1 or ZCC-10
 
 4. Insert Step Rest Request
 5. In the body of your request you can reference the TestCase property, e.g.
@@ -121,6 +128,7 @@ This assertion allows you to assert specific parts of an HL7 V2 message down to 
 #### Usage
 1. Add a **Assert HL7v2 Response** Assertion under **Script** Assertions 
 2. The Assertion contains 4 fields:
+* Decode HL7v2 - Select to extract and decode the HL7v2 from an application/fhir+json response. Defaults to true. Required.
 * Segment - The name of the HL7 segment to compare (e.g. MSH). Required.
 * Sequence - The sequence of the field to compare. 1-based index. Required.
 * Component - The component of a field to compare. 1-based index. Only use if the field is broken down to Component level (via ^ delimiters). Optional.

@@ -36,6 +36,7 @@ import com.eviware.x.impl.swing.JTextAreaFormField;
 import com.jgoodies.forms.layout.FormLayout;
 
 import ca.bc.gov.hlth.hl7v2plugin.HL7Utils;
+import ca.bc.gov.hlth.hl7v2plugin.PluginConfig;
 import ca.bc.gov.hlth.hl7v2plugin.Utils;
 
 /**
@@ -46,9 +47,12 @@ import ca.bc.gov.hlth.hl7v2plugin.Utils;
         category = AssertionCategoryMapping.VALIDATE_RESPONSE_CONTENT_CATEGORY,
         description = "Asserts specific fields in the HL7v2 message")
 public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAssertion, ResponseAssertion {
-	private static final Logger logger = LoggerFactory.getLogger(HL7v2Assertion.class);
+	private static final Logger logger = LoggerFactory.getLogger(PluginConfig.LOGGER_NAME);
 	
 	private static final String BLANK_PLACEHOLDER = "<blank>";
+	
+	/** Whether to Decode the response first */
+	private Boolean decode;
 	
 	/** The segment identifier. E.g. MSH */
 	private String segment;
@@ -72,6 +76,7 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 	public HL7v2Assertion(TestAssertionConfig assertionConfig, Assertable assertable) {
 	    super(assertionConfig, assertable, true, true, true, true);
 	    XmlObjectConfigurationReader reader = new XmlObjectConfigurationReader(getConfiguration());
+	    this.decode = reader.readBoolean("decode", true);
 	    this.segment = reader.readString("segment", null);
 	    this.sequence = reader.readString("sequence", null);
 	    this.component = reader.readString("component", null);
@@ -79,16 +84,19 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 	    this.expectedValue = reader.readString("expectedValue", null);
 	}
 	  
+	@Override
 	protected String internalAssertRequest(MessageExchange messageExchange, PropertyExpansionContext context) throws AssertionException {
 		logger.debug("internalAssertRequest");
 	    return assertContent(context, messageExchange.getRequestContent(), "Request");
 	}
   
+	@Override
 	public String internalAssertResponse(MessageExchange messageExchange, SubmitContext context) throws AssertionException {
 		logger.debug("internalAssertResponse");
 		return assertContent((PropertyExpansionContext) context, messageExchange.getResponseContent(), "Response");
 	}
-	  
+	 
+	@Override
 	protected String internalAssertProperty(TestPropertyHolder source, String propertyName, MessageExchange messageExchange,
 			SubmitContext context) throws AssertionException {
 		logger.debug("internalAssertProperty");
@@ -108,14 +116,21 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 		content = StringUtils.trimToEmpty(content);
 
 		logger.info("Raw content: {}", content);
-		logger.info("Segment {}", this.segment);		  
+		logger.info("Decode HL7v2 {}", this.decode);
+		logger.info("Segment {}", this.segment);  
 		logger.info("Sequence {}", this.sequence);
 		logger.info("Component {}", this.component);
-		logger.info("Element Name {}", this.elementName);		  
+		logger.info("Element Name {}", this.elementName);	  
 		logger.info("Expected Value {}", this.expectedValue);
 
-		// Extract the raw HL7
-		String hl7v2 = Utils.extractDecodedHL7v2(content);
+		// Extract the raw HL7 if selected
+		String hl7v2 = null;
+		if (Boolean.TRUE.equals(decode)) {
+			hl7v2 = Utils.extractDecodedHL7v2(content);
+		} else {
+			hl7v2 = content;
+		}
+		
 		logger.info("HL7 V2: {}", hl7v2);
 		
 		// Validate input
@@ -180,6 +195,7 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 			buildDialog();
 		}
 		StringToStringMap values = new StringToStringMap();
+		values.put("Decode", this.decode);
 		values.put("Segment", this.segment);
 		values.put("Sequence", this.sequence);
 		values.put("Component", this.component);
@@ -187,6 +203,7 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 		values.put("Expected Value", this.expectedValue);
 		values = this.dialog.show(values);
 		if (this.dialog.getReturnValue() == 1) {
+			this.decode = values.getBoolean("Decode");
 			this.segment = values.get("Segment");
 			this.sequence = values.get("Sequence");
 			this.component = values.get("Component");
@@ -196,6 +213,16 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 			return true;
 		}
 		return false;
+	}
+
+	public Boolean getDecode() {
+		return decode;
+	}
+
+	public void setDecode(Boolean decode) {
+		this.decode = decode;
+		logger.info("Setting decode {}", decode);
+		setConfiguration(createConfiguration());
 	}
 
 	public String getSegment() {
@@ -250,6 +277,7 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 
 	protected XmlObject createConfiguration() {
 	    XmlObjectConfigurationBuilder builder = new XmlObjectConfigurationBuilder();
+	    builder.add("decode", this.decode);
 	    builder.add("segment", this.segment);
 	    builder.add("sequence", this.sequence);
 	    builder.add("component", this.component);
@@ -261,12 +289,12 @@ public class HL7v2Assertion extends WsdlMessageAssertion implements RequestAsser
 	  protected void buildDialog() {
 	    XFormDialogBuilder builder = XFormFactory.createDialogBuilder("HL7v2 Assertion");
 	    XForm mainForm = builder.createForm("Basic", new FormLayout("5px,left:pref,5px,fill:default:grow(1.0),5px"));
-
+	    mainForm.addCheckBox("Decode", "Select to extract and decode the HL7v2 from an application/fhir+json response");
 	    mainForm.addTextField("Segment", "Segment identifier", XForm.FieldType.TEXT);
 	    mainForm.addTextField("Sequence", "Field Sequence", XForm.FieldType.TEXT);
 	    mainForm.addTextField("Component", "Component", XForm.FieldType.TEXT);
 
-	    // XXX This feature might be confusing so leave it out for now
+	    // XXX (weskubo-cgi) This feature might be confusing so leave it out for now
 	    //String[] comboValues = (String[]) ArrayUtils.addAll(new String[] {""}, HL7Parser.MSH_ELEMENT_NAMES, HL7Parser.MSA_ELEMENT_NAMES);
 	    //mainForm.addComboBox("Element Name", comboValues, "Field Name");
 	    mainForm.addTextField("Expected Value", "Expected Value", XForm.FieldType.TEXT);

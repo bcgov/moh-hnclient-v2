@@ -5,7 +5,7 @@
 
     <artifactId>hl7v2-readyapi-plugin</artifactId>
     <groupId>ca.bc.gov.hlth.hl7v2plugin</groupId>
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.3.2-SNAPSHOT</version>
 
     <name>HL7V2 ReadyAPI Plugin</name>
     <description>Plugin to send hl7v2 messages through ReadyAPI and support HL7v2 messaging.</description>

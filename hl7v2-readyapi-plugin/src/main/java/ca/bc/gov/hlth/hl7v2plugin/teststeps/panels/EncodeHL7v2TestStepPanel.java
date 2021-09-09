@@ -91,7 +91,13 @@ public class EncodeHL7v2TestStepPanel extends ModelItemDesktopPanel<EncodeHL7v2T
         
         form.append(titleLabel);
 
-        JLabel instructionsLabel = new JLabel("This step encodes the Data Source fileContent as HL7v2 and makes it available as the testcase property ${#TestCase#encodedHL7v2Msg}");
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html>");
+        sb.append("This step encodes the Data Source fileContent as HL7v2 and makes it available as the testcase property ${#TestCase#encodedHL7v2Msg}.");
+        sb.append("Prior to base64 encoding, this step parses the HL7v2 message from Data Source fileContent and stores each of the MSH fields into test case properties.");
+        sb.append("<br/>");
+        sb.append("</html>");
+        JLabel instructionsLabel = new JLabel(sb.toString());
         form.append(instructionsLabel);
         
         JPanel result = new JPanel(new BorderLayout(0, 0));
