@@ -131,6 +131,7 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
+    	clientId = (System.getenv("MOH_HNCLIENT_ID")!=null) ? System.getenv("MOH_HNCLIENT_ID") : clientId;
         ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
 		new HandshakeServer(producer, properties);
 
@@ -145,7 +146,7 @@ public class Route extends RouteBuilder {
         if (clientAuthType.equals(CLIENT_AUTH_TYPE_SIGNED_JWT)) {
             return new SignedJwtBuilder(new File(jksFilePath), keyAlias, tokenEndpoint, keystorePassword);
         } else if (clientAuthType.equals(CLIENT_AUTH_TYPE_CLIENT_ID_SECRET)) {
-        	clientId = (System.getenv("MOH_HNCLIENT_ID")!=null) ? System.getenv("MOH_HNCLIENT_ID") : clientId;
+        	logger.debug("Getting token for client: "+clientId);
             return new ClientIdSecretBuilder(clientId, clientSecret);
         } else {
             throw new IllegalStateException(String.format("Unrecognized client authentication type: '%s'", clientAuthType));
