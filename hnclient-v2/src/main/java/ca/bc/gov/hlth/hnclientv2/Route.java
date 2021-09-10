@@ -35,6 +35,8 @@ public class Route extends RouteBuilder {
     
     private static final String clientSecret = System.getenv("MOH_HNCLIENT_SECRET");
     
+    private static final String clientIdFromEnvVariable = System.getenv("MOH_HNCLIENT_SECRET");
+    
     private static final String CLIENT_AUTH_TYPE_CLIENT_ID_SECRET = "CLIENT_ID_SECRET";
     
     private static final String CLIENT_AUTH_TYPE_SIGNED_JWT = "SIGNED_JWT";
@@ -131,7 +133,10 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-    	clientId = (System.getenv("MOH_HNCLIENT_ID")!=null) ? System.getenv("MOH_HNCLIENT_ID") : clientId;
+    
+    	// For HNClients installed at Vendor's machines, value of client id is set as environment variables, similar to client secret.  
+    	// So use environment variable as client id, else use the client id from application properties.
+    	clientId = clientIdFromEnvVariable != null ? clientIdFromEnvVariable : clientId;
         ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
 		new HandshakeServer(producer, properties);
 
@@ -146,7 +151,7 @@ public class Route extends RouteBuilder {
         if (clientAuthType.equals(CLIENT_AUTH_TYPE_SIGNED_JWT)) {
             return new SignedJwtBuilder(new File(jksFilePath), keyAlias, tokenEndpoint, keystorePassword);
         } else if (clientAuthType.equals(CLIENT_AUTH_TYPE_CLIENT_ID_SECRET)) {
-        	logger.debug("Getting token for client: "+clientId);
+        	logger.debug("Getting token for client: {}",clientId);
             return new ClientIdSecretBuilder(clientId, clientSecret);
         } else {
             throw new IllegalStateException(String.format("Unrecognized client authentication type: '%s'", clientAuthType));
