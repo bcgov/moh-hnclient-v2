@@ -18,6 +18,7 @@ public class HL7Utils {
 
 	private static final String LINE_BREAK = "\n";
 	private static final String CARRIAGE_RETURN_LINE_BREAK = "\r\n";
+	private static final String CARRIAGE_RETURN = "\r";
 	private final static String COMPONENT_DELIMITER = "^";
 
 	public final static String FIELD_DELIMITER = "|";
@@ -102,7 +103,9 @@ public class HL7Utils {
 		if (v2Message.contains(CARRIAGE_RETURN_LINE_BREAK)) {
 			segments = v2Message.split(CARRIAGE_RETURN_LINE_BREAK);
 		} else if (v2Message.contains(LINE_BREAK)) {
-			segments = v2Message.split(LINE_BREAK);
+			segments = v2Message.split(LINE_BREAK); 
+		} else if (v2Message.contains(CARRIAGE_RETURN)) {
+			segments = v2Message.split(CARRIAGE_RETURN);
 		} else {
 			logger.warn("Can't split v2 message due to unknown EOL");
 		}

@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use timeout settings when sending HL7 to HN Client
 - Increase TextArea sizes in request/response windows
 
+### Known Issues
+- When modifying an Assertion used in the Publish HL7v2 to HNClient Test Step, if the assertion still fails but in a different
+way then the Failure text does not refresh. If you modify it so it goes from Pass -> Fail or Fail -> Pass, there is no issue.
+
+## [0.3.3] - 2021-09-09
+
+### Fixed
+- Updated the HL7v2 Assertion to support Pharmanet responses which only have a carriage return (CR, \r) as line terminator
+
 ## [0.3.2] - 2021-09-01
 
 ### Changed
@@ -22,18 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The descriptive text for the Encode HL7v2 is updated to be more detailed
 - The existing Assert HL7v2 Assertion can be used against raw HL7 V2 responses (in addition to the existing fhir+json) responses
 
-### Known Issues
-- When modifying an Assertion used in the Publish HL7v2 to HNClient Test Step, if the assertion still fails but in a different
-way then the Failure text does not refresh. If you modify it so it goes from Pass -> Fail or Fail -> Pass, there is no issue.
-
-## [0.3.1] - 2021-09-20
+## [0.3.1] - 2021-08-20
 
 ### Changed
 - Updated Encode HL7v2 Test Step to create Test Case properties from the HL7 request
 - Updated Decoded HL7v2 to add the encodedHL7v2Msg as a Test Case property in addition to a context property
 - Add the ability to Run the Encode HLyV2 Test Step independently
 
-## [0.3.0] - 2021-09-17
+## [0.3.0] - 2021-08-17
 ### Added
 - Added Encode HL7v2 Test Step which will encode the fileContent from the DataSource and make it available as a test case property
 - Added Decode HL7v2 Assertion which will extract and decode the HL7v2 Response and make it available as a test case property
