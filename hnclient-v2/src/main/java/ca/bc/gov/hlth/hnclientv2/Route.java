@@ -35,7 +35,7 @@ public class Route extends RouteBuilder {
     
     private static final String clientSecret = System.getenv("MOH_HNCLIENT_SECRET");
     
-    private static final String clientIdFromEnvVariable = System.getenv("MOH_HNCLIENT_SECRET");
+    private static final String clientIdFromEnvVariable = System.getenv("MOH_HNCLIENT_ID");
     
     private static final String CLIENT_AUTH_TYPE_CLIENT_ID_SECRET = "CLIENT_ID_SECRET";
     
