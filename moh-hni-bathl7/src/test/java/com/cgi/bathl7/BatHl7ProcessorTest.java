@@ -16,7 +16,7 @@ public class BatHl7ProcessorTest {
 		BatHL7Processor bat = new BatHL7Processor();
 		List<String> readFile;
 
-		readFile = bat.readFile("src/test/resources/sample/", "R031.txt");
+		readFile = bat.readFile("src/test/resources/sample/R031.txt");
 
 		assertEquals(4, readFile.size());
 	}
@@ -25,7 +25,7 @@ public class BatHl7ProcessorTest {
 	public void testExpectedException() {
 		BatHL7Processor bat = new BatHL7Processor();
 
-		Assertions.assertThrows(IOException.class, () -> bat.readFile("src/test/resources/sample/", "R032.txt"));
+		Assertions.assertThrows(IOException.class, () -> bat.readFile("src/test/resources/sample/R032.txt"));
 	}
 
 	@Test
@@ -33,7 +33,7 @@ public class BatHl7ProcessorTest {
 		BatHL7Processor bat = new BatHL7Processor();
 		List<String> readFile;
 
-		readFile = bat.readFile("src/test/resources/sample/", "EmptyFile.txt");
+		readFile = bat.readFile("src/test/resources/sample/EmptyFile.txt");
 
 		assertEquals(0, readFile.size());
 	}
@@ -50,7 +50,7 @@ public class BatHl7ProcessorTest {
 
 		BatHL7Processor.deleteFileIfExists("Test_Output.txt");
 		bat.writeFile("Test_Output.txt", responseList);
-		readFile = bat.readFile("C:/HNClient/", "Test_Output.txt");
+		readFile = bat.readFile("C:/HNClient/Test_Output.txt");
 		assertEquals(4, readFile.size());
 
 	}

@@ -31,9 +31,6 @@ import org.slf4j.LoggerFactory;
 public class BatHL7Processor {
 
 	private static final String LINE_SEPARATOR = "---------------------------------------";
-
-	private static final String FILE_LOCATION = "C://HNClient/";
-
 	private static final Logger logger = LoggerFactory.getLogger(BatHL7Processor.class);
 
 	/**
@@ -64,7 +61,7 @@ public class BatHL7Processor {
 
 			BatHL7Processor batObj = new BatHL7Processor();
 
-			List<String> lst = batObj.readFile(FILE_LOCATION, args[0]);
+			List<String> lst = batObj.readFile(args[0]);
 			hl7TransactionResponse = batObj.performTransaction(lst, address, port);
 
 			batObj.writeFile(args[1], hl7TransactionResponse);
@@ -125,9 +122,9 @@ public class BatHL7Processor {
 	 * @return list of formatted message.
 	 * @throws IOException - thrown if the file can't be found
 	 */
-	public List<String> readFile(String fileLocation, String file) throws IOException {
+	public List<String> readFile(String file) throws IOException {
 
-		String fileName = fileLocation + file;
+		String fileName = file;
 		StringBuilder sb = null;
 
 		List<String> hl7Transaction;
@@ -163,7 +160,7 @@ public class BatHL7Processor {
 	 * @throws IOException if an I/O error occurs
 	 */
 	public static void deleteFileIfExists(String fileName) throws IOException {
-		Path path = Paths.get(FILE_LOCATION + fileName);
+		Path path = Paths.get(fileName);
 		Files.deleteIfExists(path);
 	}
 
@@ -172,7 +169,7 @@ public class BatHL7Processor {
 	 * @param responseList the list of hl7 response received from server
 	 */
 	public void writeFile(String responseFileName, List<String> responseList) throws IOException {
-		File file = new File(FILE_LOCATION + responseFileName);
+		File file = new File(responseFileName);
 		Date date = java.util.Calendar.getInstance().getTime();
 		int i = 0;
 
