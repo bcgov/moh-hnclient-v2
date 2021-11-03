@@ -5,8 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 /**
- * @author Tony.Ma * 
- * @date Jan. 21, 2021
+ * Unit test class for Util
  *
  */
 public class UtilTest {
