@@ -6,7 +6,6 @@ package ca.bc.gov.hlth.hnclientv2.handler;
 import java.util.Base64;
 
 import org.apache.camel.Handler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +14,7 @@ import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 import io.netty.util.internal.StringUtil;
 
 /**
- * @author anumeha.srivastava
+ * Contains methods related to Base64 encoding
  *
  */
 public class Base64Encoder {

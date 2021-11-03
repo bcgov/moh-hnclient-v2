@@ -30,8 +30,6 @@ import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
  * This class connects to listener, does handshake and sends request to ESB.
  * Receives the response from ESB and send it to originator.
  * 
- * @author anumeha.srivastava
- *
  */
 public class HandshakeServer {
 
