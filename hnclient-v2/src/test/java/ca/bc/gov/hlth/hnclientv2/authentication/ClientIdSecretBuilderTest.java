@@ -33,7 +33,7 @@ public class ClientIdSecretBuilderTest {
         // When I build a new ClientIdSecretBuilder
         // Expect that I get a ClientAuthentication object of type ClientSecretBasic
         ClientAuthenticationBuilder clientAuthenticationBuilder = new ClientIdSecretBuilder("test", "test");
-        ClientAuthentication clientAuthentication = clientAuthenticationBuilder.build();
+        ClientAuthentication clientAuthentication = clientAuthenticationBuilder.buildAuthenticationMethod();
 
         assertTrue(clientAuthentication instanceof ClientSecretBasic);
     }

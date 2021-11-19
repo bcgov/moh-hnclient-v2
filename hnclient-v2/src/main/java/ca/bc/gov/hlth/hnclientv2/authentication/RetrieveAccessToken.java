@@ -63,7 +63,7 @@ public class RetrieveAccessToken {
         AuthorizationGrant clientGrant = new ClientCredentialsGrant();
 
         // Get the client authentication method
-        ClientAuthentication clientAuthentication = clientAuthBuilder.build();
+        ClientAuthentication clientAuthentication = clientAuthBuilder.buildAuthenticationMethod();
 
         // Make the token request
         TokenRequest request = new TokenRequest(tokenEndpointUri, clientAuthentication, clientGrant, requiredScopes);

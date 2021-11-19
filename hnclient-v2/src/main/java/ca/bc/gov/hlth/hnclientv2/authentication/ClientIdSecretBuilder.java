@@ -1,6 +1,7 @@
 package ca.bc.gov.hlth.hnclientv2.authentication;
 
 import ca.bc.gov.hlth.hnclientv2.Util;
+import ca.bc.gov.hlth.hncommon.util.LoggingUtil;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
@@ -24,6 +25,8 @@ import java.util.Objects;
  */
 public class ClientIdSecretBuilder implements ClientAuthenticationBuilder {
 
+    String methodName = LoggingUtil.getMethodName();
+
     private static final Logger logger = LoggerFactory.getLogger(ClientIdSecretBuilder.class);
 
     private final String clientIdEnv;
@@ -38,8 +41,10 @@ public class ClientIdSecretBuilder implements ClientAuthenticationBuilder {
     }
 
     @Override
-    public ClientAuthentication build() {
-        logger.info("Building client ID and secret.");
+    public ClientAuthentication buildAuthenticationMethod() {
+        String methodName = LoggingUtil.getMethodName();
+
+        logger.info("{} - Using ClientId and Secret for Authentication",methodName);
         // The credentials to authenticate the client at the token endpoint
         ClientID clientId = new ClientID(clientIdEnv);
         Secret clientSecret = new Secret(clientSecretEnv);
