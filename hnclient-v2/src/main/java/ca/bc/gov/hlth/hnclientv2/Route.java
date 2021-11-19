@@ -6,6 +6,7 @@ import java.security.KeyStore;
 import java.time.LocalDate;
 
 import org.apache.camel.EndpointInject;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
@@ -95,7 +96,7 @@ public class Route extends RouteBuilder {
     /**
      * Camel route that:
      *   1. Receives a message over tcp using the HandShakeServer to implement a specific handshake protocol
-     *   2. Retrieves a access token using Client Credential Grant
+     *   2. Retrieves an access token using Client Credential Grant
      *   3. Converts the message to base64 format
      *   4. Wraps the message in a JSON wrapper
      *   5. Sends the message to an http endpoint (HNS-ESB) with the JWT attached
@@ -107,23 +108,23 @@ public class Route extends RouteBuilder {
         init();
 
         onException(HttpHostConnectException.class, UnknownHostException.class).process(new FailureProcessor())
-        .log("Recieved body ${body}").handled(true);
+        .log("Received body ${body}").handled(true);
         
         onException(IllegalArgumentException.class).process(new FailureProcessor())
-        .log("Recieved body ${body}").handled(true);
+        .log("Received body ${body}").handled(true);
 
         onException(CamelCustomException.class).process(new FailureProcessor())
-        .log("Recieved body ${body}").handled(true);
+        .log("Received body ${body}").handled(true);
         
         from("direct:start").routeId("hnclient-route")
-            .log("Retrieving access token")
             .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")
             .setBody().method(new Base64Encoder()).id("Base64Encoder")
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
+            .log(LoggingLevel.INFO, logger,
+                    "Route - TransactionId: ${header.X-Request-Id} Message created successfully, " +
+                            "sending to {{http-protocol}}://{{hnsecure-hostname}}{{hnsecure-endpoint}}")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
-            .log("Sending to HNSecure")
             .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
-            .log("Received response from HNSecure")
             .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
             .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")
             .convertBodyTo(String.class);

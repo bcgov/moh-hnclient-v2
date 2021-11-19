@@ -4,5 +4,5 @@ import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 
 public interface ClientAuthenticationBuilder {
 
-    ClientAuthentication build();
+    ClientAuthentication buildAuthenticationMethod();
 }

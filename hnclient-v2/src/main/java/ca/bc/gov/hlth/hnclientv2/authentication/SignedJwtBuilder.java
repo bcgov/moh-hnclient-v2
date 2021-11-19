@@ -52,7 +52,7 @@ public class SignedJwtBuilder implements ClientAuthenticationBuilder {
     }
 
     @Override
-    public ClientAuthentication build() {
+    public ClientAuthentication buildAuthenticationMethod() {
         logger.info("Building signed JWT.");
         try {
             ClientID clientID = new ClientID(keyAlias);
