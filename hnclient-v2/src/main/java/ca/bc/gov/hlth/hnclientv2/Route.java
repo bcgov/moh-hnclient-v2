@@ -117,15 +117,17 @@ public class Route extends RouteBuilder {
         .log("Received body ${body}").handled(true);
         
         from("direct:start").routeId("hnclient-route")
+            .streamCaching()
             .setHeader("Authorization").method(retrieveAccessToken).id("RetrieveAccessToken")
             .setBody().method(new Base64Encoder()).id("Base64Encoder")
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .log(LoggingLevel.INFO, logger,
                     "Route - TransactionId: ${header.X-Request-Id} Message created successfully, " +
-                            "sending to {{http-protocol}}://{{hnsecure-hostname}}{{hnsecure-endpoint}}")
-            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+                            "sending to {{http-protocol}}://{{hnsecure-hostname}}/{{hnsecure-endpoint}}")
+            .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Sending Message with Auth Header: ${header.Authorization}")
+            .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Sending Message with Message Body: ${body}")
             .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
-            .to("log:HttpLogger?level=DEBUG&showBody=true&showHeaders=true&multiline=true")
+            .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Received Response with Message Body: ${body}")
             .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")
             .convertBodyTo(String.class);
     }
