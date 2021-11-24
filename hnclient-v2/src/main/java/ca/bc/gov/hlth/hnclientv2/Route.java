@@ -123,7 +123,7 @@ public class Route extends RouteBuilder {
             .setBody().method(new ProcessV2ToJson()).id("ProcessV2ToJson")
             .log(LoggingLevel.INFO, logger,
                     "Route - TransactionId: ${header.X-Request-Id} Message created successfully, " +
-                            "sending to {{http-protocol}}://{{hnsecure-hostname}}/{{hnsecure-endpoint}}")
+                            "sending to {{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}")
             .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Sending Message with Auth Header: ${header.Authorization}")
             .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Sending Message with Message Body: ${body}")
             .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
