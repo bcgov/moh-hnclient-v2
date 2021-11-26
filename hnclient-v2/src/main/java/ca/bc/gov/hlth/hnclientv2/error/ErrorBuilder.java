@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ErrorBuilder {
 
-	private static final String HL7ERROR_DEFAULT = "MSH|^~\\\\&|UNKNOWNAPP|UNKNOWNCLIENT|HL7ERRORGEN|UNKNOWNFACILITY";
+	private static final String HL7ERROR_DEFAULT = "MSH|^~\\&|UNKNOWNAPP|UNKNOWNCLIENT|HL7ERRORGEN|UNKNOWNFACILITY";
 	
 	private static final String ACK = "ACK";
 	
