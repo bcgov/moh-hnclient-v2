@@ -142,7 +142,7 @@ public class BatHL7Processor {
 				if (sb == null) {
 					sb = new StringBuilder();
 				}
-				sb.append(nextLine).append("\n");
+				sb.append(nextLine).append("\r\n");
 			}
 
 		} catch (IOException fe) {
