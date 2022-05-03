@@ -1,6 +1,7 @@
 package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -42,7 +43,7 @@ public class HandshakeServer {
 	private String localIpAddress;
 
 	private String loopbackIpAddress;
-	
+
 	private String transactionId;
 
 	private List<String> validIpList = new ArrayList<String>();
@@ -53,34 +54,50 @@ public class HandshakeServer {
 		initAccessControl();
 		initConnectionHandler();
 	}
-	
+
 	private void initAccessControl() {
 		String methodName = LoggingUtil.getMethodName();
 		try {
-			localIpAddress = InetAddress.getLocalHost().getHostAddress();			
-			logger.debug("{} - Local IP Address {}", methodName,localIpAddress);
+			localIpAddress = InetAddress.getLocalHost().getHostAddress();
+			logger.debug("{} - Local IP Address {}", methodName, localIpAddress);
 
-			loopbackIpAddress = InetAddress.getLoopbackAddress().getHostAddress();			
-			logger.debug("{} - Loopback IP Address {}", methodName,loopbackIpAddress);
+			loopbackIpAddress = InetAddress.getLoopbackAddress().getHostAddress();
+			logger.debug("{} - Loopback IP Address {}", methodName, loopbackIpAddress);
 		} catch (UnknownHostException e) {
-			logger.error("{} - Could not get host address", methodName );
+			logger.error("{} - Could not get host address", methodName);
 		}
-		
+
 		if (StringUtils.isBlank(properties.getValidIpListFile())) {
 			// This is a valid condition
 			logger.info("{} - No validIpListFile was configured", methodName);
 			return;
 		}
 
-		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(properties.getValidIpListFile())) {
-			// There's a simpler way to do this using Path and Files but it doesn't work well in an uber jar
+		try (InputStream inputStream = getClass().getClassLoader()
+				.getResourceAsStream(properties.getValidIpListFile())) {
+			// There's a simpler way to do this using Path and Files but it doesn't work
+			// well in an uber jar
 			// without extraneous additional code
-			validIpList = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-					.collect(Collectors.toList());
-			logger.info("{} - Loaded {} valid IP addresses from {}", methodName, validIpList.size(), properties.getValidIpListFile());
-		} catch (Exception e) {
-			logger.error("{} - Could not load validIpList. Error: {}", methodName, e.getMessage());
-			throw new RuntimeCamelException("Could not load Valid IP List from " + properties.getValidIpListFile() + ". Please check configuration.");
+			if (inputStream != null) {
+				validIpList = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
+						.collect(Collectors.toList());
+			} else {
+				//Read external fwlist.txt
+				try (BufferedReader br = new BufferedReader(new FileReader(properties.getValidIpListFile()))) {
+					validIpList = br.lines().collect(Collectors.toList());
+				} catch (IOException e) {
+					logger.error("{} - Could not load external validIpList. Error: {}", methodName, e.getMessage());
+					throw new RuntimeCamelException("Could not load Valid IP List from "
+							+ properties.getValidIpListFile() + ". Please check configuration.");
+				}
+			}
+
+			logger.info("{} - Loaded {} valid IP addresses from {}", methodName, validIpList.size(),
+					properties.getValidIpListFile());
+		} catch (IOException e) {
+			logger.error("{} - Could not load internal validIpList. Error: {}", methodName, e.getMessage());
+			throw new RuntimeCamelException("Could not load Valid IP List from " + properties.getValidIpListFile()
+					+ ". Please check configuration.");
 		}
 	}
 
@@ -98,8 +115,8 @@ public class HandshakeServer {
 			@Override
 			public void run() {
 				String methodName = LoggingUtil.getMethodName();
-				ThreadPoolExecutor executor = new ThreadPoolExecutor(properties.getThreadPoolSize(), properties.getThreadPoolSize(), 0L,
-						TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+				ThreadPoolExecutor executor = new ThreadPoolExecutor(properties.getThreadPoolSize(),
+						properties.getThreadPoolSize(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
 				ServerSocket mysocket = null;
 				try {
@@ -108,39 +125,47 @@ public class HandshakeServer {
 						Socket connectionSocket = mysocket.accept();
 
 						String hostAddress = connectionSocket.getInetAddress().getHostAddress();
-						
+
 						String transactionId = new TransactionIdGenerator().generateUuid();
 
-						logger.info("{} - TransactionId: {}, Accepting connection attempt from IP Address: {}", methodName, transactionId,
-								hostAddress);
+						logger.info("{} - TransactionId: {}, Accepting connection attempt from IP Address: {}",
+								methodName, transactionId, hostAddress);
 
 						// Local connections are always allowed so only validate remote connections
 						if (!isLocalConnection(hostAddress)) {
 							if (!properties.getAcceptRemoteConnections()) {
-								logger.warn("{} - TransactionId: {}, Remote connection rejected: Remote connections not allowed", methodName, transactionId);
+								logger.warn(
+										"{} - TransactionId: {}, Remote connection rejected: Remote connections not allowed",
+										methodName, transactionId);
 								continue;
 							} else {
 								if (!isValidIp(hostAddress)) {
-									logger.warn("{} - TransactionId: {}, Remote connection rejected. IP address {} not in valid list", methodName, transactionId,  hostAddress);
-									continue;	
+									logger.warn(
+											"{} - TransactionId: {}, Remote connection rejected. IP address {} not in valid list",
+											methodName, transactionId, hostAddress);
+									continue;
 								}
 							}
 						}
 
-						ConnectionHandler handler = new ConnectionHandler(producer, connectionSocket, properties.getSocketReadSleepTime(),
-								properties.getMaxSocketReadTries(), transactionId);
+						ConnectionHandler handler = new ConnectionHandler(producer, connectionSocket,
+								properties.getSocketReadSleepTime(), properties.getMaxSocketReadTries(), transactionId);
 
 						Integer activeCount = executor.getActiveCount();
 
-						logger.debug("{} - TransactionId: {} threads are active",methodName, transactionId,  activeCount);
+						logger.debug("{} - TransactionId: {} threads are active", methodName, transactionId,
+								activeCount);
 						if (Objects.equals(activeCount, properties.getThreadPoolSize())) {
-							logger.info("{} - TransactionId: {} Max Thread Pool Size reached. Waiting for available thread", methodName, transactionId);
+							logger.info(
+									"{} - TransactionId: {} Max Thread Pool Size reached. Waiting for available thread",
+									methodName, transactionId);
 						}
 						// Checking the queue after submission might seem to give a more accurate count
 						// but at that point the submitted item is always in the queue (albeit briefly)
 						Integer queueSize = executor.getQueue().size();
 						if (queueSize > 0) {
-							logger.debug("{} - TransactionId: {} {} items waiting in queue", methodName, transactionId, queueSize);
+							logger.debug("{} - TransactionId: {} {} items waiting in queue", methodName, transactionId,
+									queueSize);
 						}
 
 						executor.submit(handler);
@@ -150,15 +175,16 @@ public class HandshakeServer {
 
 					}
 				} catch (IOException ioe) {
-					logger.error("{} - TransactionId: {}  Could not start ServerSocket on {}. Error: {}", methodName, transactionId,
-							properties.getServerSocket(), ioe.getMessage());
+					logger.error("{} - TransactionId: {}  Could not start ServerSocket on {}. Error: {}", methodName,
+							transactionId, properties.getServerSocket(), ioe.getMessage());
 					throw new RuntimeCamelException("Could not start HandshakeServer", ioe);
 				} finally {
 					if (mysocket != null) {
 						try {
 							mysocket.close();
 						} catch (IOException e) {
-							logger.warn("{} - TransactionId: {} ServerSocket could not be closed", methodName, transactionId);
+							logger.warn("{} - TransactionId: {} ServerSocket could not be closed", methodName,
+									transactionId);
 						}
 					}
 					executor.shutdown();
@@ -175,7 +201,8 @@ public class HandshakeServer {
 			public void uncaughtException(Thread th, Throwable ex) {
 				// XXX We don't want to end up here as this means the error was not caught
 				// and we have no good way to recover from it.
-				logger.error("{} - TransactionId: {} Unhandled exception {} in thread {}", LoggingUtil.getMethodName(), transactionId, ex.getMessage(), th.getId());
+				logger.error("{} - TransactionId: {} Unhandled exception {} in thread {}", LoggingUtil.getMethodName(),
+						transactionId, ex.getMessage(), th.getId());
 			}
 		};
 
@@ -185,8 +212,7 @@ public class HandshakeServer {
 	}
 
 	private Boolean isLocalConnection(String hostAddress) {
-		return StringUtils.equals(hostAddress, loopbackIpAddress)
-				|| StringUtils.equals(hostAddress, localIpAddress);
+		return StringUtils.equals(hostAddress, loopbackIpAddress) || StringUtils.equals(hostAddress, localIpAddress);
 	}
 
 	private Boolean isValidIp(String hostAddress) {
