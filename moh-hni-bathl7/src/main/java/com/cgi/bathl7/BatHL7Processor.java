@@ -142,7 +142,7 @@ public class BatHL7Processor {
 				if (sb == null) {
 					sb = new StringBuilder();
 				}
-				sb.append(nextLine).append("\r\n");
+				sb.append(nextLine).append("\r");
 			}
 
 		} catch (IOException fe) {
@@ -197,7 +197,7 @@ public class BatHL7Processor {
 				"BATHL7 \nUsage: bathl7 input_file_name output_file_name client_address:port %n%s%n%s%n%s%n%s",
 				"Where:", "input_file_name is the name of the input transaction file. Default is input.txt",
 				"output_file_name is the name of the output response file.",
-				"client_address:port is the ip/domain name, and port of the HNS-Client. Default is localhost:19430"));
+				"client_address:port is the ip/domain name, and port of the HNS-Client. Default is localhost:5555"));
 	}
 
 }
