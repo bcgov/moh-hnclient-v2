@@ -43,15 +43,17 @@ public class BatHl7ProcessorTest {
 
 		List<String> responseList = new ArrayList<>();
 		BatHL7Processor bat = new BatHL7Processor();
-		List<String> readFile;
+		
 		responseList.add("MSH|^~\\&||BC01000165|RAIGT-PRSN-DMGR|BC00002014|1|xx|||D|2.4");
 		responseList.add("MSH|^~\\&||BC01000166|RAIGT-PRSN-DMGR|BC00002014|2|xx|||D|2.4");
 		responseList.add("MSH|^~\\&||BC01000167|RAIGT-PRSN-DMGR|BC00002014|3|xx|||D|2.4");
-
-		BatHL7Processor.deleteFileIfExists("Test_Output.txt");
-		bat.writeFile("Test_Output.txt", responseList);
-		readFile = bat.readFile("C:/HNClient/Test_Output.txt");
-		assertEquals(4, readFile.size());
+		
+		String fileName = "src/test/resources/sample/TestOutput.txt";
+		BatHL7Processor.deleteFileIfExists(fileName);
+				
+		bat.writeFile(fileName, responseList);
+		List<String> responseFile = bat.readFile(fileName);
+		assertEquals(4, responseFile.size());
 
 	}
 }
