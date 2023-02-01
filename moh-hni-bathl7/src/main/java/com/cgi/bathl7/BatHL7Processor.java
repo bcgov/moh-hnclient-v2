@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class BatHL7Processor {
 
 	private static final String LINE_SEPARATOR = "---------------------------------------";
+	private static final String LINE_TERMINATOR = "\r";
 	private static final Logger logger = LoggerFactory.getLogger(BatHL7Processor.class);
 
 	/**
@@ -142,7 +143,7 @@ public class BatHL7Processor {
 				if (sb == null) {
 					sb = new StringBuilder();
 				}
-				sb.append(nextLine).append("\r");
+				sb.append(nextLine).append(LINE_TERMINATOR);
 			}
 
 		} catch (IOException fe) {
