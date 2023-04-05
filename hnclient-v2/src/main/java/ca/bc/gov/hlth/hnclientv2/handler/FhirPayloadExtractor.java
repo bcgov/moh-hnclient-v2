@@ -2,10 +2,9 @@ package ca.bc.gov.hlth.hnclientv2.handler;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Handler;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.nimbusds.oauth2.sdk.util.StringUtils;
 
 import ca.bc.gov.hlth.hnclientv2.error.CamelCustomException;
 import ca.bc.gov.hlth.hnclientv2.error.ErrorBuilder;
@@ -48,7 +47,7 @@ public class FhirPayloadExtractor {
         // In case string is not Base 64, decoder throws IllegalArgumentException. Handled that exception.
         String extractedMessage;
         try {
-        	extractedMessage = StringUtil.decodeBase64(encodedExtractedMessage.getV2MessageData());
+        	extractedMessage =  StringUtils.trim(StringUtil.decodeBase64(encodedExtractedMessage.getV2MessageData()));
         } catch (IllegalArgumentException e) {
         	logger.error("{} - Exception while decoding message: {}", LoggingUtil.getMethodName(), e.getMessage());
         	throw new CamelCustomException(e.getMessage());

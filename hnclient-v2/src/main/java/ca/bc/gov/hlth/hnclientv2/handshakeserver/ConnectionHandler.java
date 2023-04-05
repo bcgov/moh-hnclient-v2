@@ -190,25 +190,22 @@ public class ConnectionHandler implements Callable<Void> {
 
 		logger.info("{} - TransactionId: {} Start performing message transaction: {}", methodName, transactionId,  ret_code);
 		// read SI segment
-		if (socketInput.available() > 0) {
-			byte[] message = new byte[SI_MESSAGE_LENGTH];
-			socketInput.read(message);
-			
-			HandshakeUtil.unScrambleData(message, decodeSeed);
-			logInputData(message);					
-			logger.debug("{} - TransactionId: {}  Received from originator {} byte SI Data Block: {}", methodName, transactionId,  message.length,
+		
+		logger.info("{} - TransactionId: {} Start reading SI segment: {}", methodName, transactionId,  ret_code);
+		byte[] sisegment = new byte[SI_MESSAGE_LENGTH];
+		socketInput.read(sisegment);			
+		HandshakeUtil.unScrambleData(sisegment, decodeSeed);
+		logInputData(sisegment);					
+		logger.debug("{} - TransactionId: {}  Received from originator {} byte SI Data Block: {}", methodName, transactionId,  sisegment.length,
 					ret_code);
-			logger.debug("{} - TransactionId: {}  Received SI segment: {}", methodName, transactionId,  new String(message, StandardCharsets.UTF_8));
-		} else {
-			ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-			logger.debug("{} - TransactionId: {}  Error receiving SI segment from Listener: {}", methodName, transactionId, ret_code);
-
-		}
-
+		logger.debug("{} - TransactionId: {}  Received SI segment: {}", methodName, transactionId,  new String(sisegment, StandardCharsets.UTF_8));
+		
 		// read dtsegment header
+		logger.info("{} - TransactionId: {} Start reading DT segment: {}", methodName, transactionId,  ret_code);
 		byte[] dtsegment = new byte[SEGMENT_LENGTH];
 
 		socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
+		logInputData(dtsegment);
 		HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
 		logInputData(dtsegment);
 		int numSocketReadTries = 0;
@@ -217,7 +214,8 @@ public class ConnectionHandler implements Callable<Void> {
 		while (!headerIn.contains(DATA_INDICATOR)) {
 			socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
 			headerIn = HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
-
+			logger.info("{} - TransactionId: {}  Data recieved is: {} - {}", methodName, transactionId, numSocketReadTries, headerIn);
+			
 			if (numSocketReadTries < maxSocketReadTries) {
 				numSocketReadTries++;
 				// Give other packets a chance to arrive and
@@ -229,6 +227,7 @@ public class ConnectionHandler implements Callable<Void> {
 				ret_code = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
 				hnSecureResponse = ErrorBuilder
 						.buildErrorMessage(MessageUtil.HL7_ERROR_MSG_ERROR_DT_HEADER_TO_HNCLIENT);
+				break;
 			}
 
 		}
