@@ -201,7 +201,7 @@ public class ConnectionHandler implements Callable<Void> {
 		logger.debug("{} - TransactionId: {}  Received SI segment: {}", methodName, transactionId,  new String(sisegment, StandardCharsets.UTF_8));
 		
 		// read dtsegment header
-		logger.info("{} - TransactionId: {} Start reading DT segment: {}", methodName, transactionId,  ret_code);
+		logger.debug("{} - TransactionId: {} Start reading DT segment: {}", methodName, transactionId,  ret_code);
 		byte[] dtsegment = new byte[SEGMENT_LENGTH];
 
 		socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
@@ -214,7 +214,7 @@ public class ConnectionHandler implements Callable<Void> {
 		while (!headerIn.contains(DATA_INDICATOR)) {
 			socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
 			headerIn = HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
-			logger.info("{} - TransactionId: {}  Data recieved is: {} - {}", methodName, transactionId, numSocketReadTries, headerIn);
+			logger.debug("{} - TransactionId: {}  Data recieved is: {} - {}", methodName, transactionId, numSocketReadTries, headerIn);
 			
 			if (numSocketReadTries < maxSocketReadTries) {
 				numSocketReadTries++;
