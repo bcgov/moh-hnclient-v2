@@ -3,6 +3,8 @@ package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
@@ -79,15 +81,15 @@ public class ConnectionHandler implements Callable<Void> {
 	@Override
 	public Void call() throws Exception {	
 		String methodName = LoggingUtil.getMethodName();
-		BufferedInputStream socketInput = null;
-		BufferedOutputStream socketOutput = null;
+		InputStream socketInput = null;
+		OutputStream socketOutput = null;
 		String ret_code = null;
 		try {
 			logger.info("{} - TransactionId: {}. 2 -  Handling connection from IP Address: {}", methodName, transactionId,
 					socket.getInetAddress().getHostAddress());
-
-			socketInput = new BufferedInputStream(socket.getInputStream(), 1000);
-			socketOutput = new BufferedOutputStream(socket.getOutputStream());
+			
+			socketInput = new BufferedInputStream(socket.getInputStream());
+            socketOutput = new BufferedOutputStream(socket.getOutputStream());
 
 			ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 
@@ -137,7 +139,7 @@ public class ConnectionHandler implements Callable<Void> {
 		return null;
 	}
 	
-	private void sendResponse(BufferedOutputStream socketOutput, String hnSecureResponse) throws IOException {
+	private void sendResponse(OutputStream socketOutput, String hnSecureResponse) throws IOException {
 		String methodName = LoggingUtil.getMethodName();
 
 		logger.debug("{} - TransactionId: {}  Started writing HL7 reponsec back to POS", methodName, transactionId );
@@ -182,7 +184,7 @@ public class ConnectionHandler implements Callable<Void> {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private void performTransaction(BufferedInputStream socketInput, BufferedOutputStream socketOutput)
+	private void performTransaction(InputStream socketInput, OutputStream socketOutput)
 			throws IOException, InterruptedException {
 		String headerIn;
 		String methodName = LoggingUtil.getMethodName();
@@ -193,7 +195,7 @@ public class ConnectionHandler implements Callable<Void> {
 		
 		logger.info("{} - TransactionId: {} Start reading SI segment: {}", methodName, transactionId,  ret_code);
 		byte[] sisegment = new byte[SI_MESSAGE_LENGTH];
-		socketInput.read(sisegment);			
+		socketInput.readNBytes(sisegment, 0, SI_MESSAGE_LENGTH);			
 		HandshakeUtil.unScrambleData(sisegment, decodeSeed);
 		logInputData(sisegment);					
 		logger.debug("{} - TransactionId: {}  Received from originator {} byte SI Data Block: {}", methodName, transactionId,  sisegment.length,
@@ -204,7 +206,7 @@ public class ConnectionHandler implements Callable<Void> {
 		logger.debug("{} - TransactionId: {} Start reading DT segment: {}", methodName, transactionId,  ret_code);
 		byte[] dtsegment = new byte[SEGMENT_LENGTH];
 
-		socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
+		socketInput.readNBytes(dtsegment, 0, SEGMENT_LENGTH);
 		logInputData(dtsegment);
 		HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
 		logInputData(dtsegment);
@@ -212,7 +214,7 @@ public class ConnectionHandler implements Callable<Void> {
 		headerIn = new String(dtsegment, StandardCharsets.UTF_8);
 
 		while (!headerIn.contains(DATA_INDICATOR)) {
-			socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
+			socketInput.readNBytes(dtsegment, 0, SEGMENT_LENGTH);
 			headerIn = HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
 			logger.debug("{} - TransactionId: {}  Data recieved is: {} - {}", methodName, transactionId, numSocketReadTries, headerIn);
 			
@@ -257,7 +259,7 @@ public class ConnectionHandler implements Callable<Void> {
 					ret_code);
 			// read dtsegment data
 			byte[] dtMessage = new byte[messageLength];
-			socketInput.read(dtMessage, 0, messageLength);
+			socketInput.readNBytes(dtMessage, 0, messageLength);
 			HandshakeUtil.unScrambleData(dtMessage, decodeSeed);
 			logInputData(dtMessage);
 			String HL7IN = new String(dtMessage, StandardCharsets.UTF_8);
@@ -310,7 +312,7 @@ public class ConnectionHandler implements Callable<Void> {
 	 *@return success/failure message
 	 */
 
-	protected String xfer_ReceiveHSSegment(BufferedOutputStream bos, BufferedInputStream ios, Integer handshakeSeed)
+	protected String xfer_ReceiveHSSegment(OutputStream bos, InputStream ios, Integer handshakeSeed)
 			throws IOException {
 		logger.debug("{} - TransactionId: {}. 3. Received handshake seed to compute challenge data : {}", LoggingUtil.getMethodName(), transactionId, handshakeSeed);
 
@@ -367,7 +369,7 @@ public class ConnectionHandler implements Callable<Void> {
 	 *         HNET_RTRN_INVALIDFORMATERROR
 	 * @throws IOException the io exception
 	 */
-	protected String recvVerifyHandshakeData(BufferedInputStream ios, byte[] handShakeData, byte[] clientHandshakeData)
+	protected String recvVerifyHandshakeData(InputStream ios, byte[] handShakeData, byte[] clientHandshakeData)
 			throws IOException {
 		String methodName = LoggingUtil.getMethodName();
 
@@ -389,7 +391,7 @@ public class ConnectionHandler implements Callable<Void> {
 			byte[] clientHandshakesegment = new byte[SEGMENT_LENGTH];
 
 			// read and verify the handshake header
-			ios.read(clientHandshakesegment, 0, SEGMENT_LENGTH);
+			ios.readNBytes(clientHandshakesegment, 0, SEGMENT_LENGTH);
 			
 			logger.debug("{} - TransactionId: {} 6. Reading client HS Header block {} ({})", methodName, transactionId, clientHandshakesegment,  new String(clientHandshakesegment, StandardCharsets.UTF_8));
 
@@ -400,7 +402,7 @@ public class ConnectionHandler implements Callable<Void> {
 			}
 
 			// read and verify the handshake data
-			ios.read(clientHandshakeData, 0, 8);
+			ios.readNBytes(clientHandshakeData, 0, XFER_HANDSHAKE_SIZE);
 			retCode = verifyHandshakeResponse(clientHandshakeData, handShakeData);
 		}
 		return retCode;
