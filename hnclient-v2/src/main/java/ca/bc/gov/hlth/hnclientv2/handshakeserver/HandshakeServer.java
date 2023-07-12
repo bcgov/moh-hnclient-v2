@@ -128,7 +128,7 @@ public class HandshakeServer {
 
 						String transactionId = new TransactionIdGenerator().generateUuid();
 
-						logger.info("{} - TransactionId: {}, Accepting connection attempt from IP Address: {}",
+						logger.info("{} - TransactionId: {}. 1 - Accepting connection attempt from IP Address: {}",
 								methodName, transactionId, hostAddress);
 
 						// Local connections are always allowed so only validate remote connections
@@ -153,7 +153,7 @@ public class HandshakeServer {
 
 						Integer activeCount = executor.getActiveCount();
 
-						logger.debug("{} - TransactionId: {} threads are active", methodName, transactionId,
+						logger.debug("{} - TransactionId: {}, {} threads are active", methodName, transactionId, 
 								activeCount);
 						if (Objects.equals(activeCount, properties.getThreadPoolSize())) {
 							logger.info(

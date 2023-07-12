@@ -3,6 +3,8 @@ package ca.bc.gov.hlth.hnclientv2.handshakeserver;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
@@ -79,15 +81,15 @@ public class ConnectionHandler implements Callable<Void> {
 	@Override
 	public Void call() throws Exception {	
 		String methodName = LoggingUtil.getMethodName();
-		BufferedInputStream socketInput = null;
-		BufferedOutputStream socketOutput = null;
+		InputStream socketInput = null;
+		OutputStream socketOutput = null;
 		String ret_code = null;
 		try {
-			logger.info("{} - TransactionId: {} Accepting connection attempt from IP Address: {}", methodName, transactionId,
+			logger.info("{} - TransactionId: {}. 2 -  Handling connection from IP Address: {}", methodName, transactionId,
 					socket.getInetAddress().getHostAddress());
-
-			socketInput = new BufferedInputStream(socket.getInputStream(), 1000);
-			socketOutput = new BufferedOutputStream(socket.getOutputStream());
+			
+			socketInput = new BufferedInputStream(socket.getInputStream());
+            socketOutput = new BufferedOutputStream(socket.getOutputStream());
 
 			ret_code = xfer_ReceiveHSSegment(socketOutput, socketInput, XFER_HANDSHAKE_SEED);
 
@@ -137,7 +139,7 @@ public class ConnectionHandler implements Callable<Void> {
 		return null;
 	}
 	
-	private void sendResponse(BufferedOutputStream socketOutput, String hnSecureResponse) throws IOException {
+	private void sendResponse(OutputStream socketOutput, String hnSecureResponse) throws IOException {
 		String methodName = LoggingUtil.getMethodName();
 
 		logger.debug("{} - TransactionId: {}  Started writing HL7 reponsec back to POS", methodName, transactionId );
@@ -182,7 +184,7 @@ public class ConnectionHandler implements Callable<Void> {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private void performTransaction(BufferedInputStream socketInput, BufferedOutputStream socketOutput)
+	private void performTransaction(InputStream socketInput, OutputStream socketOutput)
 			throws IOException, InterruptedException {
 		String headerIn;
 		String methodName = LoggingUtil.getMethodName();
@@ -193,7 +195,7 @@ public class ConnectionHandler implements Callable<Void> {
 		
 		logger.info("{} - TransactionId: {} Start reading SI segment: {}", methodName, transactionId,  ret_code);
 		byte[] sisegment = new byte[SI_MESSAGE_LENGTH];
-		socketInput.read(sisegment);			
+		socketInput.readNBytes(sisegment, 0, SI_MESSAGE_LENGTH);			
 		HandshakeUtil.unScrambleData(sisegment, decodeSeed);
 		logInputData(sisegment);					
 		logger.debug("{} - TransactionId: {}  Received from originator {} byte SI Data Block: {}", methodName, transactionId,  sisegment.length,
@@ -204,7 +206,7 @@ public class ConnectionHandler implements Callable<Void> {
 		logger.debug("{} - TransactionId: {} Start reading DT segment: {}", methodName, transactionId,  ret_code);
 		byte[] dtsegment = new byte[SEGMENT_LENGTH];
 
-		socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
+		socketInput.readNBytes(dtsegment, 0, SEGMENT_LENGTH);
 		logInputData(dtsegment);
 		HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
 		logInputData(dtsegment);
@@ -212,7 +214,7 @@ public class ConnectionHandler implements Callable<Void> {
 		headerIn = new String(dtsegment, StandardCharsets.UTF_8);
 
 		while (!headerIn.contains(DATA_INDICATOR)) {
-			socketInput.read(dtsegment, 0, SEGMENT_LENGTH);
+			socketInput.readNBytes(dtsegment, 0, SEGMENT_LENGTH);
 			headerIn = HandshakeUtil.unScrambleData(dtsegment, decodeSeed);
 			logger.debug("{} - TransactionId: {}  Data recieved is: {} - {}", methodName, transactionId, numSocketReadTries, headerIn);
 			
@@ -257,7 +259,7 @@ public class ConnectionHandler implements Callable<Void> {
 					ret_code);
 			// read dtsegment data
 			byte[] dtMessage = new byte[messageLength];
-			socketInput.read(dtMessage, 0, messageLength);
+			socketInput.readNBytes(dtMessage, 0, messageLength);
 			HandshakeUtil.unScrambleData(dtMessage, decodeSeed);
 			logInputData(dtMessage);
 			String HL7IN = new String(dtMessage, StandardCharsets.UTF_8);
@@ -310,9 +312,9 @@ public class ConnectionHandler implements Callable<Void> {
 	 *@return success/failure message
 	 */
 
-	protected String xfer_ReceiveHSSegment(BufferedOutputStream bos, BufferedInputStream ios, Integer handshakeSeed)
+	protected String xfer_ReceiveHSSegment(OutputStream bos, InputStream ios, Integer handshakeSeed)
 			throws IOException {
-		logger.debug("{} Received handshake seed to compute challange data : {}", LoggingUtil.getMethodName(), handshakeSeed);
+		logger.debug("{} - TransactionId: {}. 3. Received handshake seed to compute challenge data : {}", LoggingUtil.getMethodName(), transactionId, handshakeSeed);
 
 		byte[] handshakeData = new byte[XFER_HANDSHAKE_SIZE];
 		byte[] clientHandshakeData = new byte[XFER_HANDSHAKE_SIZE];
@@ -329,6 +331,8 @@ public class ConnectionHandler implements Callable<Void> {
 		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {
 			bos.write(HS_SEGMENT.getBytes(), 0, SEGMENT_LENGTH);
 			bos.flush();
+
+			logger.debug("{} - TransactionId: {}. 4. Sent HS Header Block to Originator : {} ({})", LoggingUtil.getMethodName(), transactionId, HS_SEGMENT.getBytes(), HS_SEGMENT);
 		}
 
 		/* Now send the actual handshake data */
@@ -336,20 +340,21 @@ public class ConnectionHandler implements Callable<Void> {
 			bos.write(handshakeData);
 			bos.flush();
 
-			logger.debug("{} - TransactionId: {} Sent {} HS Data Block to Originator :{}", LoggingUtil.getMethodName(), transactionId, XFER_HANDSHAKE_SIZE, retCode);
+			logger.debug("{} - TransactionId: {}. 5. Sent HS Data Block to Originator :{}", LoggingUtil.getMethodName(), transactionId, handshakeData);
 		}
 
 		/*
 		 * Now receive and verify the originator's response to the handshake data. This
 		 * must be the first segment which the originator sends.
 		 */
-		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS))
+		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS)) {
 			retCode = recvVerifyHandshakeData(ios, handshakeData, clientHandshakeData);
+		}
 
 		if (retCode.equals(MessageUtil.HNET_RTRN_SUCCESS))
 			decodeSeed = handshakeData[XFER_HANDSHAKE_SIZE - 1];
 
-		logger.debug("{} - TransactionId: {} Completed handshake with return code as : {}", LoggingUtil.getMethodName(), transactionId, retCode);
+		logger.debug("{} - TransactionId: {}. 10. Completed handshake with return code as : {}", LoggingUtil.getMethodName(), transactionId, retCode);
 		return retCode;
 	}
 
@@ -364,17 +369,17 @@ public class ConnectionHandler implements Callable<Void> {
 	 *         HNET_RTRN_INVALIDFORMATERROR
 	 * @throws IOException the io exception
 	 */
-	protected String recvVerifyHandshakeData(BufferedInputStream ios, byte[] handShakeData, byte[] clientHandshakeData)
+	protected String recvVerifyHandshakeData(InputStream ios, byte[] handShakeData, byte[] clientHandshakeData)
 			throws IOException {
 		String methodName = LoggingUtil.getMethodName();
 
 		String retCode = MessageUtil.HNET_RTRN_SUCCESS;
-		logger.debug("{} - TransactionId: {} Computing expected handshake data", methodName, transactionId);
+		logger.trace("{} - TransactionId: {} Computing expected handshake data", methodName, transactionId);
 
 		// Check parameters.
 		if (handShakeData == null) {
 			retCode = MessageUtil.HNET_RTRN_INVALIDPARAMETER;
-			logger.debug("{} - TransactionId:{} Origninal HandshakeData parameter cannot be NULL : {}", methodName, transactionId, retCode);
+			logger.debug("{} - TransactionId:{} Original HandshakeData parameter cannot be NULL : {}", methodName, transactionId, retCode);
 			return retCode;
 
 		} else if (clientHandshakeData == null) {
@@ -386,16 +391,18 @@ public class ConnectionHandler implements Callable<Void> {
 			byte[] clientHandshakesegment = new byte[SEGMENT_LENGTH];
 
 			// read and verify the handshake header
-			ios.read(clientHandshakesegment, 0, SEGMENT_LENGTH);
+			ios.readNBytes(clientHandshakesegment, 0, SEGMENT_LENGTH);
+			
+			logger.debug("{} - TransactionId: {} 6. Reading client HS Header block {} ({})", methodName, transactionId, clientHandshakesegment,  new String(clientHandshakesegment, StandardCharsets.UTF_8));
 
 			if (!HandshakeUtil.compareByteArray(clientHandshakesegment, HS_SEGMENT.getBytes())) {
 				retCode = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-				logger.debug("{} - TransactionId: {} Handshake header segment are not matched :{}", methodName, transactionId, retCode);
+				logger.error("{} - TransactionId: {}. Handshake header segment are not matched :{}", methodName, transactionId, retCode);
 				return retCode;
 			}
 
 			// read and verify the handshake data
-			ios.read(clientHandshakeData, 0, 8);
+			ios.readNBytes(clientHandshakeData, 0, XFER_HANDSHAKE_SIZE);
 			retCode = verifyHandshakeResponse(clientHandshakeData, handShakeData);
 		}
 		return retCode;
@@ -410,19 +417,20 @@ public class ConnectionHandler implements Callable<Void> {
 		String retCode = MessageUtil.HNET_RTRN_SUCCESS;
 
 		String methodName = LoggingUtil.getMethodName();
-		logger.debug("{} - TransactionId: {} Received client and original handshake data are {} ,{}", methodName, transactionId, clientHandshakeData,
+		logger.debug("{} - TransactionId: {}. 7. Received client and original handshake data are {} ,{}", methodName, transactionId, clientHandshakeData,
 				originalHandshakeData);
 
 		// Scramble the original handshake data
 		HandshakeUtil.scrambleData(originalHandshakeData, decodeSeed);
+		logger.debug("{} - TransactionId: {}. 8. Scrambled handshake data: {}", methodName, transactionId, originalHandshakeData);
 
 		// Compare client handshake data and original handshake data
 		if (!HandshakeUtil.compareByteArray(clientHandshakeData, originalHandshakeData)) {
 			retCode = MessageUtil.HNET_RTRN_INVALIDFORMATERROR;
-			logger.debug("{} - TransactionId: {} Received handshake data does not match expected data :{}", methodName, transactionId, retCode);
+			logger.error("{} - TransactionId: {}. 9. Received handshake data does not match expected data :{}", methodName, transactionId, retCode);
 
 		} else {
-			logger.debug("{} - TransactionId: {} Received handshake data matched expected data :{}", methodName, transactionId, retCode);
+			logger.debug("{} - TransactionId: {}. 9. Received handshake data matched expected data :{}", methodName, transactionId, retCode);
 		}
 		return retCode;
 	}
