@@ -30,17 +30,17 @@ import ca.bc.gov.hlth.hnclientv2.keystore.RenewKeys;
 
 public class Route extends RouteBuilder {
 
-    private static final Logger logger = LoggerFactory.getLogger(Route.class);
+	private static final Logger logger = LoggerFactory.getLogger(Route.class);
    
-    private static final String keystorePassword = System.getenv("MOH_HNCLIENT_KEYSTORE_PASSWORD");
-    
-    private static final String clientSecret = System.getenv("MOH_HNCLIENT_SECRET");
-    
-    private static final String clientIdFromEnvVariable = System.getenv("MOH_HNCLIENT_ID");
-    
     private static final String CLIENT_AUTH_TYPE_CLIENT_ID_SECRET = "CLIENT_ID_SECRET";
     
     private static final String CLIENT_AUTH_TYPE_SIGNED_JWT = "SIGNED_JWT";
+
+	private static final String MOH_HNCLIENT_ID = "MOH_HNCLIENT_ID";
+
+	private static final String MOH_HNCLIENT_SECRET = "MOH_HNCLIENT_SECRET";
+
+    private static final String UNDERSCORE = "_";
 
     @PropertyInject(value = "token-endpoint")
     private String tokenEndpoint;
@@ -48,6 +48,13 @@ public class Route extends RouteBuilder {
     @PropertyInject(value = "client-id")
     private String clientId;
 
+    private String clientSecret;
+
+    @PropertyInject(value = "client-env")
+    private String clientEnv;
+
+    private String keystorePassword;
+    
     /** Space-delimited list of requested scopes */
     @PropertyInject(value = "scopes")
     private String scopes;
@@ -136,10 +143,9 @@ public class Route extends RouteBuilder {
     // Ideally this happens in the Constructor but @PropertyInject happens after the constructor so we call it from the route itself
     // To call it from the constructor we could move property loading into MainMethod and pass the properties into the Constructor
     public void init() throws Exception {
-    
-    	// For HNClients installed at Vendor's machines, value of client id is set as environment variables, similar to client secret.  
-    	// So use environment variable as client id, else use the client id from application properties.
-    	clientId = clientIdFromEnvVariable != null ? clientIdFromEnvVariable : clientId;
+        
+    	initClientCredentials();
+    	
         ServerProperties properties = new ServerProperties(serverSocket, socketReadSleepTime, maxSocketReadTries, threadPoolSize, acceptRemoteConnections, validIpListFile);
 		new HandshakeServer(producer, properties);
 
@@ -149,6 +155,37 @@ public class Route extends RouteBuilder {
             renewKeys();
         }
     }
+
+	/*
+	* To allow for running multiple instances of the HNS Client on the same machine the environment variable names used for specifying the Client ID and Secret values are dynamic. This 
+	* allows these environment variables to be set with unique names for each instance of the HNS Client based on the specified environment. The application property 'client-env' is used
+	* to specify the environment. If specified valid values are: TEST, VC1, TRN, PROD. During the HNS Client installation a corresponding environment variable pair will have been configurated. These 
+	* are the possible names for the listed instances:
+	*	Default (no value specified in 'client-env' property)
+	*		MOH_HNCLIENT_ID
+	*		MOH_HNCLIENT_SECRET
+	*	Test
+	*		MOH_HNCLIENT_ID_TEST
+	*		MOH_HNCLIENT_SECRET_TEST
+	*	Compliance
+	*		MOH_HNCLIENT_ID_VC1
+	*		MOH_HNCLIENT_SECRET_VC1
+	*	Training
+	*		MOH_HNCLIENT_TRN
+	*		MOH_HNCLIENT_SECRET_TRN
+	*	Production
+	*		MOH_HNCLIENT_PROD
+	*		MOH_HNCLIENT_SECRET_PROD
+	* 
+	*/
+	private void initClientCredentials() {
+        String clientIdFromEnvVariable = clientEnv != null? System.getenv(MOH_HNCLIENT_ID + UNDERSCORE + clientEnv.toUpperCase()) : System.getenv(MOH_HNCLIENT_ID);
+    	clientSecret = clientEnv != null? System.getenv(MOH_HNCLIENT_SECRET + UNDERSCORE + clientEnv.toUpperCase()) : System.getenv(MOH_HNCLIENT_SECRET);
+
+        // For HNClients installed at Vendor's machines, the value of client id is set as environment variables, similar to client secret. However, for use in dev  
+    	// there is also the option to supply the client ID in the properties file in 'client-id'. If the environment variable for client ID is not set then use the client id from application properties.        
+    	clientId = clientIdFromEnvVariable != null ? clientIdFromEnvVariable : clientId;
+	}
 
     private ClientAuthenticationBuilder getClientAuthentication() throws Exception {
         if (clientAuthType.equals(CLIENT_AUTH_TYPE_SIGNED_JWT)) {
