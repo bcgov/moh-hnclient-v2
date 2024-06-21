@@ -54,7 +54,7 @@ public class Route extends RouteBuilder {
     @PropertyInject(value = "client-env")
     private String clientEnv;
 
-    private String keystorePassword;
+    private String keystorePassword = System.getenv("MOH_HNCLIENT_KEYSTORE_PASSWORD");
     
     /** Space-delimited list of requested scopes */
     @PropertyInject(value = "scopes")
