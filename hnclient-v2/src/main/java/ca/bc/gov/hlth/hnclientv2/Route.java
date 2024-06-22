@@ -10,6 +10,7 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ public class Route extends RouteBuilder {
     @PropertyInject(value = "client-env")
     private String clientEnv;
 
-    private String keystorePassword;
+    private String keystorePassword = System.getenv("MOH_HNCLIENT_KEYSTORE_PASSWORD");
     
     /** Space-delimited list of requested scopes */
     @PropertyInject(value = "scopes")
@@ -179,8 +180,8 @@ public class Route extends RouteBuilder {
 	* 
 	*/
 	private void initClientCredentials() {
-        String clientIdFromEnvVariable = clientEnv != null? System.getenv(MOH_HNCLIENT_ID + UNDERSCORE + clientEnv.toUpperCase()) : System.getenv(MOH_HNCLIENT_ID);
-    	clientSecret = clientEnv != null? System.getenv(MOH_HNCLIENT_SECRET + UNDERSCORE + clientEnv.toUpperCase()) : System.getenv(MOH_HNCLIENT_SECRET);
+        String clientIdFromEnvVariable = StringUtils.isNotBlank(clientEnv) ? System.getenv(MOH_HNCLIENT_ID + UNDERSCORE + clientEnv.strip().toUpperCase()) : System.getenv(MOH_HNCLIENT_ID);
+    	clientSecret = StringUtils.isNotBlank(clientEnv) ? System.getenv(MOH_HNCLIENT_SECRET + UNDERSCORE + clientEnv.strip().toUpperCase()) : System.getenv(MOH_HNCLIENT_SECRET);
 
         // For HNClients installed at Vendor's machines, the value of client id is set as environment variables, similar to client secret. However, for use in dev  
     	// there is also the option to supply the client ID in the properties file in 'client-id'. If the environment variable for client ID is not set then use the client id from application properties.        
