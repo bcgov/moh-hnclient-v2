@@ -20,8 +20,17 @@ public class FhirPayloadExtractor {
 
     private static final Logger logger = LoggerFactory.getLogger(FhirPayloadExtractor.class);
 
+    private boolean preserveMessage;
+    
+	public FhirPayloadExtractor() {
+	}
+
+	public FhirPayloadExtractor(boolean preserveMessage) {
+		this.preserveMessage = preserveMessage;
+	}
+
     @Handler
-    public static String extractFhirPayload(Exchange exchange, String fhirMessage) throws CamelCustomException {
+    public String extractFhirPayload(Exchange exchange, String fhirMessage) throws CamelCustomException {
     	// Assume that an empty response body means there is an issue with the server
     	// and return an error response
     	if (StringUtils.isBlank(fhirMessage)) {
@@ -46,14 +55,25 @@ public class FhirPayloadExtractor {
         // Only way to verify if message is base64 encoded is to decode and check for no exception
         // In case string is not Base 64, decoder throws IllegalArgumentException. Handled that exception.
         String extractedMessage;
+        
         try {
-        	extractedMessage =  StringUtils.trim(StringUtil.decodeBase64(encodedExtractedMessage.getV2MessageData()));
+        	/* Some connected partners applications that consume the response message required that any carriage return
+        	 * in the message be kept. For these cases the message is not trimmed as this removes additional characters including 
+        	 * carriage returns. The standard behaviour is to trim the message.
+        	 *   
+        	 */
+        	if (preserveMessage) {
+        		extractedMessage =  StringUtil.decodeBase64(encodedExtractedMessage.getV2MessageData());
+        	} else {
+        		extractedMessage =  StringUtils.trim(StringUtil.decodeBase64(encodedExtractedMessage.getV2MessageData()));
+        	}
         } catch (IllegalArgumentException e) {
         	logger.error("{} - Exception while decoding message: {}", LoggingUtil.getMethodName(), e.getMessage());
         	throw new CamelCustomException(e.getMessage());
         }
-		logger.debug("{}: The decoded HL7 message is: {}", LoggingUtil.getMethodName(), extractedMessage);
-        
+		logger.debug("{}: The decoded HL7 message is:\n{}", LoggingUtil.getMethodName(), extractedMessage);
+		logger.debug("{}: End Message.", LoggingUtil.getMethodName());
+		
         return extractedMessage;
     }    
 	

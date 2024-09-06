@@ -23,7 +23,7 @@ public class FhirPayloadExtractorTest extends CamelTestSupport {
 			@Override
 			public void configure() {
 				from("direct:sampleInput")
-				.setBody().method(new FhirPayloadExtractor())
+				.setBody().method(new FhirPayloadExtractor(false))
                 .to("mock:output");
 			}
 		};
