@@ -101,6 +101,9 @@ public class Route extends RouteBuilder {
 
     private RetrieveAccessToken retrieveAccessToken;
 
+    @PropertyInject(defaultValue = "false", value = "preserve-message")
+    private boolean preserveMessage;
+    
     /**
      * Camel route that:
      *   1. Receives a message over tcp using the HandShakeServer to implement a specific handshake protocol
@@ -136,7 +139,7 @@ public class Route extends RouteBuilder {
             .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Sending Message with Message Body: ${body}")
             .to("{{http-protocol}}://{{hnsecure-hostname}}:{{hnsecure-port}}/{{hnsecure-endpoint}}?throwExceptionOnFailure=false").id("ToHnSecure")
             .log(LoggingLevel.DEBUG, logger, "Route - TransactionId: ${header.X-Request-Id} Received Response with Message Body: ${body}")
-            .setBody().method(new FhirPayloadExtractor()).id("FhirPayloadExtractor")
+            .setBody().method(new FhirPayloadExtractor(preserveMessage)).id("FhirPayloadExtractor")
             .convertBodyTo(String.class);
     }
 
