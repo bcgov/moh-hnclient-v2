@@ -1,9 +1,11 @@
-.idea/*
+.project
 *.iml
 *.class
 *.prefs
 *.gerry
-.project
+.idea/*
+*/application.properties*
+*hnclient-installer/application.properties*
 /logs
 hnclient-v2/logs/
 hnclient-v2/target/
