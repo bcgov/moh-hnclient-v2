@@ -2,6 +2,7 @@
 *.iml
 *.class
 *.prefs
+*.gerry
 .project
 /logs
 hnclient-v2/logs/
